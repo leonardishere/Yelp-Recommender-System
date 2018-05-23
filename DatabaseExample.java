@@ -9,7 +9,7 @@ import java.sql.*;
 
 /**
  * This class provides an example of how to read a database.
- * @author Andrew Leonard
+ * @author Team 2
  *
  */
 public class DatabaseExample {
@@ -17,7 +17,7 @@ public class DatabaseExample {
 	public static final String USERNAME = "root";
 	public static final String PASSWORD = "root";
 	
-	public static void main(String args[]){
+	public static void example(){
 		Connection con = null;
 		try{
 			Class.forName("com.mysql.cj.jdbc.Driver");
@@ -25,7 +25,7 @@ public class DatabaseExample {
 			Statement stmt = con.createStatement();
 			String query = "select id, name, review_count from user limit 10";
 			ResultSet rs = stmt.executeQuery(query);
-			String line = dividerLine(new int[]{22,15,11});
+			String line = Helper.dividerLine(new int[]{22,15,11});
 			System.out.println(line);
 			System.out.printf("| %-22s | %-15s | %-11s |\n", "id", "name", "reviews");
 			System.out.println(line);
@@ -46,19 +46,7 @@ public class DatabaseExample {
 		}
 	}
 	
-	/**
-	 * Creates a divider line to be printed with a table.
-	 * @param fieldWidths the width of each field in order
-	 * @return a string divide
-	 */
-	public static String dividerLine(int[] fieldWidths) {
-		StringBuilder builder = new StringBuilder("+");
-		for(int width : fieldWidths) {
-			for(int i = 0; i < width+2; ++i) {
-				builder.append("-");
-			}
-			builder.append("+");
-		}
-		return builder.toString();
+	public static void main(String[] args) {
+		example();
 	}
 }
