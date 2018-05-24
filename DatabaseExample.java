@@ -13,7 +13,7 @@ import java.sql.*;
  *
  */
 public class DatabaseExample {
-	public static final String URL = "jdbc:mysql://localhost:3306/yelp_db?verifyServerCertificate=false&useSSL=true";
+	public static final String URL = "jdbc:mysql://localhost:9876/yelp_db?verifyServerCertificate=false&useSSL=true";
 	public static final String USERNAME = "root";
 	public static final String PASSWORD = "root";
 	
