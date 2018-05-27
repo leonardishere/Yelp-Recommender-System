@@ -144,8 +144,10 @@ public class DatabaseReader {
 			String query = "select id, business_id, name, value from attribute";
 			ResultSet rs = stmt.executeQuery(query);
 			while(rs.next()) {
-				out.write(String.format("insert into attribute values (%d, `%s`, `%s`, `%s`);\n", rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4)));
+				out.write(String.format("insert into attribute values (%d, \"%s\", \"%s\", \"%s\");\n", rs.getInt(1), rs.getString(2), rs.getString(3).replaceAll("\"", "\"\""), rs.getString(4).replaceAll("\"", "\"\"")));
+				if(rs.getInt(1) % 100000 == 0) out.write(String.format("select \"inserted %s row \" || id from %s where id=%d;\n", "attribute", "attribute", rs.getInt(1)));
 			}
+			out.write("select \"finished inserting into attribute. number of rows: \" || count(*) from attribute;\n");
 		} catch(Exception e){
 			e.printStackTrace();
 		} finally {
@@ -195,9 +197,13 @@ public class DatabaseReader {
 			Statement stmt = conn.createStatement();
 			String query = "select id, name, neighborhood, address, city, state, postal_code, latitude, longitude, stars, review_count, is_open from business";
 			ResultSet rs = stmt.executeQuery(query);
+			int i = 0;
 			while(rs.next()) {
-				out.write(String.format("insert into attribute values (`%s`, `%s`, `%s`, `%s`, `%s`, `%s`, `%s`, %f, %f, %f, %d, %d);\n", rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6), rs.getString(7), rs.getDouble(8), rs.getDouble(9), rs.getDouble(10), rs.getInt(11), rs.getInt(12)));
+				out.write(String.format("insert into business values (\"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", \"%s\", %f, %f, %f, %d, %d);\n", rs.getString(1), rs.getString(2).replaceAll("\"", "\"\""), rs.getString(3).replaceAll("\"", "\"\""), rs.getString(4).replaceAll("\"", "\"\""), rs.getString(5).replaceAll("\"", "\"\""), rs.getString(6).replaceAll("\"", "\"\""), rs.getString(7).replaceAll("\"", "\"\""), rs.getDouble(8), rs.getDouble(9), rs.getDouble(10), rs.getInt(11), rs.getInt(12)));
+				++i;
+				if(i % 100000 == 0) out.write(String.format("select \"inserted %s row %d. id = \" || id from %s where id = \"%s\";\n", "business", i, "business", rs.getString(1)));
 			}
+			out.write("select \"finished inserting into business. number of rows: \" || count(*) from business;\n");
 		} catch(Exception e){
 			e.printStackTrace();
 		} finally {
@@ -239,8 +245,10 @@ public class DatabaseReader {
 			String query = "select id, business_id, category from category";
 			ResultSet rs = stmt.executeQuery(query);
 			while(rs.next()) {
-				out.write(String.format("insert into category values (%d, `%s`, `%s`);\n", rs.getInt(1), rs.getString(2), rs.getString(3)));
+				out.write(String.format("insert into category values (%d, \"%s\", \"%s\");\n", rs.getInt(1), rs.getString(2), rs.getString(3).replaceAll("\"", "\"\"")));
+				if(rs.getInt(1) % 100000 == 0) out.write(String.format("select \"inserted %s row \" || id from %s where id=%d;\n", "category", "category", rs.getInt(1)));
 			}
+			out.write("select \"finished inserting into category. number of rows: \" || count(*) from category;\n");
 		} catch(Exception e){
 			e.printStackTrace();
 		} finally {
@@ -283,8 +291,10 @@ public class DatabaseReader {
 			String query = "select id, business_id, date, count from checkin";
 			ResultSet rs = stmt.executeQuery(query);
 			while(rs.next()) {
-				out.write(String.format("insert into category values (%d, `%s`, `%s`, %d);\n", rs.getInt(1), rs.getString(2), rs.getString(3), rs.getInt(4)));
+				out.write(String.format("insert into checkin values (%d, \"%s\", \"%s\", %d);\n", rs.getInt(1), rs.getString(2), rs.getString(3).replaceAll("\"", "\"\""), rs.getInt(4)));
+				if(rs.getInt(1) % 100000 == 0) out.write(String.format("select \"inserted %s row \" || id from %s where id=%d;\n", "checkin", "checkin", rs.getInt(1)));
 			}
+			out.write("select \"finished inserting into checkin. number of rows: \" || count(*) from checkin;\n");
 		} catch(Exception e){
 			e.printStackTrace();
 		} finally {
@@ -326,8 +336,10 @@ public class DatabaseReader {
 			String query = "select id, user_id, year from elite_years";
 			ResultSet rs = stmt.executeQuery(query);
 			while(rs.next()) {
-				out.write(String.format("insert into category values (%d, `%s`, `%s`);\n", rs.getInt(1), rs.getString(2), rs.getString(3)));
+				out.write(String.format("insert into elite_years values (%d, \"%s\", \"%s\");\n", rs.getInt(1), rs.getString(2), rs.getString(3)));
+				if(rs.getInt(1) % 100000 == 0) out.write(String.format("select \"inserted %s row \" || id from %s where id=%d;\n", "elite_years", "elite_years", rs.getInt(1)));
 			}
+			out.write("select \"finished inserting into elite_years. number of rows: \" || count(*) from elite_years;\n");
 		} catch(Exception e){
 			e.printStackTrace();
 		} finally {
@@ -371,7 +383,8 @@ public class DatabaseReader {
 				String query = "select id, user_id, friend_id from friend limit " + i + ", 1000000";
 				ResultSet rs = stmt.executeQuery(query);
 				while(rs.next()) {
-					out1.write(String.format("insert into friends values (%d, `%s`, `%s`);\n", rs.getInt(1), rs.getString(2), rs.getString(3)));
+					out1.write(String.format("insert into friends values (%d, \"%s\", \"%s\");\n", rs.getInt(1), rs.getString(2), rs.getString(3)));
+					if(rs.getInt(1) % 100000 == 0) out1.write(String.format("select \"inserted %s row \" || id from %s where id=%d;\n", "friends", "friends", rs.getInt(1)));
 				}
 				conn.close();
 				System.out.printf("%10d friends\n", i);
@@ -386,11 +399,13 @@ public class DatabaseReader {
 				String query = "select id, user_id, friend_id from friend limit " + i + ", 1000000";
 				ResultSet rs = stmt.executeQuery(query);
 				while(rs.next()) {
-					out2.write(String.format("insert into friends values (%d, `%s`, `%s`);\n", rs.getInt(1), rs.getString(2), rs.getString(3)));
+					out2.write(String.format("insert into friends values (%d, \"%s\", \"%s\");\n", rs.getInt(1), rs.getString(2), rs.getString(3)));
+					if(rs.getInt(1) % 100000 == 0) out2.write(String.format("select \"inserted %s row \" || id from %s where id=%d;\n", "friends", "friends", rs.getInt(1)));
 				}
 				conn.close();
 				System.out.printf("%10d friends\n", i);
 			}
+			out2.write("select \"finished inserting into friends. number of rows: \" || count(*) from friends;");
 		} catch(Exception e){
 			e.printStackTrace();
 		} finally {
@@ -433,8 +448,10 @@ public class DatabaseReader {
 			String query = "select id, business_id, hours from hours";
 			ResultSet rs = stmt.executeQuery(query);
 			while(rs.next()) {
-				out.write(String.format("insert into hours values (%d, `%s`, `%s`);\n", rs.getInt(1), rs.getString(2), rs.getString(3)));
+				out.write(String.format("insert into hours values (%d, \"%s\", \"%s\");\n", rs.getInt(1), rs.getString(2), rs.getString(3)));
+				if(rs.getInt(1) % 100000 == 0) out.write(String.format("select \"inserted %s row \" || id from %s where id=%d;\n", "hours", "hours", rs.getInt(1)));
 			}
+			out.write("select \"finished inserting into hours. number of rows: \" || count(*) from hours;\n");
 		} catch(Exception e){
 			e.printStackTrace();
 		} finally {
@@ -476,9 +493,13 @@ public class DatabaseReader {
 			Statement stmt = conn.createStatement();
 			String query = "select id, business_id, caption, label from photo";
 			ResultSet rs = stmt.executeQuery(query);
+			int i = 0;
 			while(rs.next()) {
-				out.write(String.format("insert into photo values (`%s`, `%s`, `%s`, `%s`);\n", rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4)));
+				out.write(String.format("insert into photo values (\"%s\", \"%s\", \"%s\", \"%s\");\n", rs.getString(1), rs.getString(2), rs.getString(3).replaceAll("\"", "\"\""), rs.getString(4).replaceAll("\"", "\"\"")));
+				++i;
+				if(i % 100000 == 0) out.write(String.format("select \"inserted %s row %d. id = \" || id from %s where id = \"%s\";\n", "photo", i, "photo", rs.getString(1)));
 			}
+			out.write("select \"finished inserting into photo. number of rows: \" || count(*) from photo;\n");
 		} catch(Exception e){
 			e.printStackTrace();
 		} finally {
@@ -502,12 +523,12 @@ public class DatabaseReader {
 	public static void dump_review() {
 		System.out.println("Begin review table dump");
 		Connection conn = null;
-		BufferedWriter out = null;
+		BufferedWriter out1 = null, out2 = null;
 		try{
-			String filepath = "sql/review.sql";
-			out = new BufferedWriter(new FileWriter(filepath));
-			out.write("DROP TABLE IF EXISTS `review`;\n");
-			out.write("CREATE TABLE `review` (\r\n" + 
+			String filepath1 = "sql/review_1.sql";
+			out1 = new BufferedWriter(new FileWriter(filepath1));
+			out1.write("DROP TABLE IF EXISTS `review`;\n");
+			out1.write("CREATE TABLE `review` (\r\n" + 
 					"  `id` varchar(22) NOT NULL,\r\n" + 
 					"  `business_id` varchar(22) NOT NULL,\r\n" + 
 					"  `user_id` varchar(22) NOT NULL,\r\n" + 
@@ -520,23 +541,45 @@ public class DatabaseReader {
 					"  PRIMARY KEY (`id`)\r\n" + 
 					") ;\n");
 
-			for(int i = 0; i < 5261669; i += 1000000){
+			int j = 0;
+			for(int i = 0; i < 2500000; i += 1000000){
 				Class.forName("com.mysql.cj.jdbc.Driver");
 				conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
 				Statement stmt = conn.createStatement();
 				String query = "select id, business_id, user_id, stars, date, text, useful, funny, cool from review limit " + i + ", 1000000";
 				ResultSet rs = stmt.executeQuery(query);
 				while(rs.next()) {
-					out.write(String.format("insert into review values (`%s`, `%s`, `%s`, %d, `%s`, `%s`, %d, %d, %d);\n", rs.getString(1), rs.getString(2), rs.getString(3), rs.getInt(4), rs.getString(5), rs.getString(6), rs.getInt(7), rs.getInt(8), rs.getInt(9)));
+					out1.write(String.format("insert into review values (\"%s\", \"%s\", \"%s\", %d, \"%s\", \"%s\", %d, %d, %d);\n", rs.getString(1), rs.getString(2), rs.getString(3), rs.getInt(4), rs.getString(5), rs.getString(6).replaceAll("\"", "\"\""), rs.getInt(7), rs.getInt(8), rs.getInt(9)));
+					++j;
+					if(j % 100000 == 0) out1.write(String.format("select \"inserted %s row %d. id = \" || id from %s where id = \"%s\";\n", "review", j, "review", rs.getString(1)));
 				}
 				conn.close();
 				System.out.printf("%10d reviews\n", i);
 			}
+
+			String filepath2 = "sql/review_2.sql";
+			out2 = new BufferedWriter(new FileWriter(filepath2));
+			for(int i = 2500000; i < 5261669; i += 1000000){
+				Class.forName("com.mysql.cj.jdbc.Driver");
+				conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+				Statement stmt = conn.createStatement();
+				String query = "select id, business_id, user_id, stars, date, text, useful, funny, cool from review limit " + i + ", 1000000";
+				ResultSet rs = stmt.executeQuery(query);
+				while(rs.next()) {
+					out2.write(String.format("insert into review values (\"%s\", \"%s\", \"%s\", %d, \"%s\", \"%s\", %d, %d, %d);\n", rs.getString(1), rs.getString(2), rs.getString(3), rs.getInt(4), rs.getString(5), rs.getString(6).replaceAll("\"", "\"\""), rs.getInt(7), rs.getInt(8), rs.getInt(9)));
+					++j;
+					if(j % 100000 == 0) out2.write(String.format("select \"inserted %s row %d \" || id from %s where strcmp(id,\"%s\")=0;\n", "review", j, "review", rs.getString(1)));
+				}
+				conn.close();
+				System.out.printf("%10d reviews\n", i);
+			}
+			out1.write("select \"finished inserting into review. number of rows: \" || count(*) from review;\n");
 		} catch(Exception e){
 			e.printStackTrace();
 		} finally {
 			try {
-				if(out != null) out.close();
+				if(out1 != null) out1.close();
+				if(out2 != null) out2.close();
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
@@ -576,8 +619,10 @@ public class DatabaseReader {
 			String query = "select id, user_id, business_id, text, date, likes from tip";
 			ResultSet rs = stmt.executeQuery(query);
 			while(rs.next()) {
-				out.write(String.format("insert into tip values (%d, `%s`, `%s`, `%s`, `%s`, %d);\n", rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getInt(6)));
+				out.write(String.format("insert into tip values (%d, \"%s\", \"%s\", \"%s\", \"%s\", %d);\n", rs.getInt(1), rs.getString(2), rs.getString(3), rs.getString(4).replaceAll("\"", "\"\""), rs.getString(5), rs.getInt(6)));
+				if(rs.getInt(1) % 100000 == 0) out.write(String.format("select \"inserted %s row \" || id from %s where id=%d;\n", "tip", "tip", rs.getInt(1)));
 			}
+			out.write("select \"finished inserting into tip. number of rows: \" || count(*) from tip;\n");
 		} catch(Exception e){
 			e.printStackTrace();
 		} finally {
@@ -635,9 +680,13 @@ public class DatabaseReader {
 			Statement stmt = conn.createStatement();
 			String query = "select id, name, review_count, yelping_since, useful, funny, cool, fans, average_stars, compliment_hot, compliment_more, compliment_profile, compliment_cute, compliment_list, compliment_note, compliment_plain, compliment_cool, compliment_funny, compliment_writer, compliment_photos from user";
 			ResultSet rs = stmt.executeQuery(query);
+			int i = 0;
 			while(rs.next()) {
-				out.write(String.format("insert into user values (`%s`, `%s`, %d, `%s`, %d, %d, %d, %d, %f, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d);\n", rs.getString(1), rs.getString(2), rs.getInt(3), rs.getString(4), rs.getInt(5), rs.getInt(6), rs.getInt(7), rs.getInt(8), rs.getDouble(9), rs.getInt(10), rs.getInt(11), rs.getInt(12), rs.getInt(13), rs.getInt(14), rs.getInt(15), rs.getInt(16), rs.getInt(17), rs.getInt(18), rs.getInt(19), rs.getInt(20)));
+				out.write(String.format("insert into user values (\"%s\", \"%s\", %d, \"%s\", %d, %d, %d, %d, %f, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d, %d);\n", rs.getString(1), rs.getString(2), rs.getInt(3), rs.getString(4), rs.getInt(5), rs.getInt(6), rs.getInt(7), rs.getInt(8), rs.getDouble(9), rs.getInt(10), rs.getInt(11), rs.getInt(12), rs.getInt(13), rs.getInt(14), rs.getInt(15), rs.getInt(16), rs.getInt(17), rs.getInt(18), rs.getInt(19), rs.getInt(20)));
+				++i;
+				if(i % 100000 == 0) out.write(String.format("select \"inserted %s row %d. id = \" || id from %s where id = \"%s\";\n", "user", i, "user", rs.getString(1)));
 			}
+			out.write("select \"finished inserting into user. number of rows: \" || count(*) from user;\n");
 		} catch(Exception e){
 			e.printStackTrace();
 		} finally {
@@ -665,12 +714,16 @@ public class DatabaseReader {
 		dump_category();
 		dump_checkin();
 		dump_elite_years();
-		dump_friends();
+		//dump_friends();
 		dump_hours();
 		dump_photo();
-		dump_review();
+		//dump_review();
 		dump_tip();
 		dump_user();
+	}
+	
+	public static void stringReplaceTest() {
+		System.out.println("test \" string".replaceAll("\"", "\"\""));
 	}
 	
 	/**
@@ -679,5 +732,9 @@ public class DatabaseReader {
 	 */
 	public static void main(String[] args) {
 		dump_all();
+		//dump_photo();
+		//dump_friends();
+		//dump_review();
+		//stringReplaceTest();
 	}
 }

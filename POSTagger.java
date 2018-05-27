@@ -1,15 +1,27 @@
+package yelp_recommender_system;
+
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class POSTagger {
-    MaxentTagger tagger =  new MaxentTagger("lib/english-left3words-distsim.tagger");
-
+	MaxentTagger tagger = null;
+	
     private static final String NOUN = "N"; // Starts with N, handles NN, NNS, NNP, NNPS
     private static final String ADJECTIVE = "J"; // Starts with J, handles JJ, JJR, JJS
 
-    public POSTagger() {}
+    public POSTagger() {
+    	//I had to go with this type of structure because my path is different and I didn't want to mess up other peoples builds by just switching it
+    	try {
+    		tagger =  new MaxentTagger("lib/english-left3words-distsim.tagger");
+    	} catch(Exception ex) {
+    		tagger = null;
+    	}
+    	if(tagger == null) {
+    		tagger = new MaxentTagger("yelp_recommender_system/lib/english-left3words-distsim.tagger");
+    	}
+    }
 
     public Map<String, Integer> tagPOS(String sentence){
         Map<String, Integer> map = new HashMap<>();
@@ -33,6 +45,16 @@ public class POSTagger {
         }
 
         return map;
+    }
+    
+    /**
+     * Tester function
+     * @param args
+     */
+    public static void main(String[] args) {
+    	POSTagger posTagger = new POSTagger();
+    	String sentence = "The food was very good. The service was good. The service was slow.";
+        System.out.println("\""+sentence+"\""+" = > "+posTagger.tagPOS(sentence).toString());
     }
 
 }
