@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
  * ranks from highest to lowest, and takes top k terms. Top k terms get combined with other attributes
  * and sent to Andrew's algorithm.
  *
- * Everything tested except the read/write to the DB.
+ * Work in progress, still testing this.
  */
 
 public class TermFrequencyAnalyzer {
@@ -168,10 +168,34 @@ public class TermFrequencyAnalyzer {
     }
 
     //Called to get the Top Key Terms for a given business ID from the database.
-    public List<String> getKeyTermsFromDB(String businessID) {
-        selectFromDB("Select keyTerm from BusinessKeyTerms Where businessID='" + businessID + "';",
+    public double getKeyTermsFromDB(String businessID1, String businessID2) {
+        selectFromDB("Select keyTerm from BusinessKeyTerms Where businessID='" + businessID1 + "';",
                 TableName.BUSINESSKEYTERMS);
-        return keyTerms;
+
+        List<String> b1KeyTerms = new LinkedList<>(keyTerms);
+        keyTerms.clear();
+
+        selectFromDB("Select keyTerm from BusinessKeyTerms Where businessID='" + businessID2 + "';",
+                TableName.BUSINESSKEYTERMS);
+
+        List<String> b2KeyTerms = new LinkedList<>(keyTerms);
+
+        //This will make a set of unique terms between the two
+        Set<String> b1Set = new HashSet<>(b1KeyTerms);
+        Set<String> b2Set = new HashSet<>(b2KeyTerms);
+
+        //B1 now contains the intersect of B1 and B2
+        b1Set.retainAll(b2Set);
+
+        double jacardSimlarity = 0;
+        if (b1KeyTerms.size() + b2KeyTerms.size() - b1Set.size() !=0) {
+            double b1Size = (double)b1Set.size();
+            double b1KeyTermsSize = (double)b1KeyTerms.size();
+            double b2KeyTermsSize = (double)b2KeyTerms.size();
+            jacardSimlarity = b1Size / (b1KeyTermsSize + b2KeyTermsSize  - b1Size);
+        }
+        return jacardSimlarity;
+
     }
 
     private void writeTopKAttributesToTable(String businessID, List<String> minedAttributes) {
@@ -221,11 +245,42 @@ public class TermFrequencyAnalyzer {
     }
 
 
+/*
+    public double testSimilarityOfKeyTerms(List<String> keyTerms1, List<String> keyTerms2){
+
+        keyTerms = keyTerms1;
+
+        List<String> b1KeyTerms = new LinkedList<>(keyTerms);
+        keyTerms.clear();
+
+        keyTerms = keyTerms2;
+        List<String> b2KeyTerms = new LinkedList<>(keyTerms);
+
+
+        //This will make a set of unique terms between the two
+        Set<String> b1Set = new HashSet<>(b1KeyTerms);
+        Set<String> b2Set = new HashSet<>(b2KeyTerms);
+
+        //B1 now contains the intersect of B1 and B2
+        b1Set.retainAll(b2Set);
+*/
+
+
+//        double jacardSimlarity = 0;
+//        if (b1KeyTerms.size() + b2KeyTerms.size() - b1Set.size() !=0) {
+//            double b1Size = (double)b1Set.size();
+//            double b1KeyTermsSize = (double)b1KeyTerms.size();
+//            double b2KeyTermsSize = (double)b2KeyTerms.size();
+//            jacardSimlarity = b1Size / (b1KeyTermsSize + b2KeyTermsSize  - b1Size);
+//        }
+//        return jacardSimlarity;
+//    }
+
 //Unit Tests for everything but the SQL
 /*    public static void main (String[] args) {
-        TermFrequencyAnalyzer analyzer = new TermFrequencyAnalyzer();
+        TermFrequencyAnalyzer analyzer = new TermFrequencyAnalyzer();*/
 
-        List<String> testReviews = new ArrayList<>();
+/*        List<String> testReviews = new ArrayList<>();
         testReviews.add("This is awesome. I love this place. Blah balah blah blah.");
         testReviews.add("I hate this place. The worst.");
         testReviews.add("Best food ever.");
@@ -249,7 +304,26 @@ public class TermFrequencyAnalyzer {
 
         analyzer.countTerms(new ArrayList<>(keyTermsTest.keySet()), testReviews);
 
-        List<String> topK = analyzer.getTopKTerms(analyzer.termToReviewCount);
+        List<String> topK = analyzer.getTopKTerms(analyzer.termToReviewCount);*/
+
+/*
+
+        List<String> keyTerms1 = new LinkedList<>();
+        keyTerms1.add("test");
+        keyTerms1.add("food");
+        keyTerms1.add("seven");
+        keyTerms1.add("good");
+
+
+        List<String> keyTerms2 = new LinkedList<>();
+        keyTerms2.add("test");
+        keyTerms2.add("food");
+        keyTerms2.add("seven");
+        keyTerms2.add("good");
+        keyTerms2.add("meatballs");
+        keyTerms2.add("testthis");
+
+        analyzer.testSimilarityOfKeyTerms(keyTerms1, keyTerms2);
 
     }*/
 
