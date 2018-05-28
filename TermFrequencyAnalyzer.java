@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
  * ranks from highest to lowest, and takes top k terms. Top k terms get combined with other attributes
  * and sent to Andrew's algorithm.
  *
- * Work in progress, still testing this.
+ * Everything tested except the read/write to the DB.
  */
 
 public class TermFrequencyAnalyzer {
@@ -26,6 +26,8 @@ public class TermFrequencyAnalyzer {
 
     List<String> reviews = new ArrayList<>();
 
+    List<String> keyTerms = new ArrayList<>();
+
     //Number of nouns/adjectives to extract from the reviews for each business
     Integer k = 10;
 
@@ -34,14 +36,13 @@ public class TermFrequencyAnalyzer {
 
     //BusinessID, Term, TermRank
     public void initializeDB() {
-        //Drop the K term table
+        //Drop the K term table then Create it again for a fresh start.
         List<String> statements = new LinkedList<>();
         statements.add("DROP TABLE 'BusinessKeyTerms';");
         statements.add("CREATE TABLE BusinessKeyTerms(id varchar(255)," +
                 "businessID varchar(255), keyTerm varchar(255));");
         writeToTable(statements, TableName.BUSINESSKEYTERMS);
 
-        //Create the K term table
     }
 
     //This method used from open source code located here: http://www.sqlitetutorial.net/sqlite-java/select/
@@ -75,6 +76,13 @@ public class TermFrequencyAnalyzer {
                     System.out.println("Reading from review table");
                     String temp = rs.getString("text");
                     reviews.add(temp);
+                }
+            } else if (table.equals(TableName.BUSINESSKEYTERMS)) {
+                while (rs.next()) {
+                    System.out.println("Reading from businessKeyTerm table");
+                    String temp = rs.getString("keyTerm");
+                    keyTerms.add(temp);
+
                 }
             }
 
@@ -138,7 +146,7 @@ public class TermFrequencyAnalyzer {
     public void analyzeReviewTextForBusiness(String businessID) {
         //Get all the Reviews with ratings >= 4 Stars
         selectFromDB("SELECT text " +
-                "FROM review WHERE business_id = " + businessID + " AND stars >= 4",
+                "FROM review WHERE business_id = '" + businessID + "' AND stars >= 4",
                 TableName.REVIEWS);
 
         //Combine text so sent to POSTagger as one large document
@@ -159,13 +167,20 @@ public class TermFrequencyAnalyzer {
         selectFromDB("SELECT id FROM business;", TableName.BUSINESS);
     }
 
+    //Called to get the Top Key Terms for a given business ID from the database.
+    public List<String> getKeyTermsFromDB(String businessID) {
+        selectFromDB("Select keyTerm from BusinessKeyTerms Where businessID='" + businessID + "';",
+                TableName.BUSINESSKEYTERMS);
+        return keyTerms;
+    }
+
     private void writeTopKAttributesToTable(String businessID, List<String> minedAttributes) {
 
         List<String> insertStatements = new LinkedList<>();
 
         for (String keyTerm : minedAttributes) {
             String sqlStatement = "INSERT INTO BusinessKeyTerms(id, businessID, keyTerm) " +
-                    "VALUES(" + currentPrimaryKey +", " + businessID + ", " + keyTerm +";";
+                    "VALUES(" + currentPrimaryKey +", '" + businessID + "', '" + keyTerm +"';";
             insertStatements.add(sqlStatement);
 
             currentPrimaryKey++;
@@ -191,6 +206,8 @@ public class TermFrequencyAnalyzer {
         }
     }
 
+
+    //Call this ONCE
     public void runTermFrequencyAnalysis(){
         initializeDB();
 
