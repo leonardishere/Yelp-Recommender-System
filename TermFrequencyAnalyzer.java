@@ -1,3 +1,4 @@
+package yelp_recommender_system;
 
 import java.sql.*;
 import java.util.*;
@@ -16,7 +17,7 @@ import java.util.stream.Collectors;
 
 public class TermFrequencyAnalyzer {
 
-    public enum TableName{BUSINESS, REVIEWS, USERS, BUSSINESSKEYTERMS};
+    public enum TableName{BUSINESS, REVIEWS, USERS, BUSINESSKEYTERMS};
 
     //Maps the word (either noun or adjective) to the number of reviews it appears in.
     Map<String, Integer> termToReviewCount = new HashMap<>();
@@ -34,6 +35,11 @@ public class TermFrequencyAnalyzer {
     //BusinessID, Term, TermRank
     public void initializeDB() {
         //Drop the K term table
+        List<String> statements = new LinkedList<>();
+        statements.add("DROP TABLE 'BusinessKeyTerms';");
+        statements.add("CREATE TABLE BusinessKeyTerms(id varchar(255)," +
+                "businessID varchar(255), keyTerm varchar(255));");
+        writeToTable(statements, TableName.BUSINESSKEYTERMS);
 
         //Create the K term table
     }
@@ -52,7 +58,7 @@ public class TermFrequencyAnalyzer {
     }
 
     //Portions of this code used  from here: http://www.sqlitetutorial.net/sqlite-java/select/
-    public void selectFromDB(String selectStatement, TableName table){
+    private void selectFromDB(String selectStatement, TableName table){
 
         try (Connection conn = this.connect();
              Statement stmt  = conn.createStatement();
@@ -80,7 +86,7 @@ public class TermFrequencyAnalyzer {
     //Counts the number of reviews that each noun/adjective
     //occurs in the original list of business reviews.
     //Then divides by total number of reviews > 4/5 stars.
-    public void countTerms(List<String> nounsAndAdjectives) {
+    private void countTerms(List<String> nounsAndAdjectives) {
         Integer count = 0;
         for (String term : nounsAndAdjectives) {
             for (String review : reviews) {
@@ -93,7 +99,7 @@ public class TermFrequencyAnalyzer {
         }
     }
 
-    public List<String> getTopKTerms() {
+    private List<String> getTopKTerms() {
 
         //Sort the terms by values
         List<Integer> values = (LinkedList<Integer>)termToReviewCount.values();
@@ -113,7 +119,7 @@ public class TermFrequencyAnalyzer {
 
     //Combine all the reviews into one giant text so only hitting the POSTagger
     //once to improve efficiency (hopefully).
-    public String combineReviews(){
+    private String combineReviews(){
         StringBuilder sb = new StringBuilder();
         for (String review : reviews){
             sb.append(review + "/n");
@@ -122,7 +128,7 @@ public class TermFrequencyAnalyzer {
     }
 
     //Selects all the reivews from the Review table with Rating > 4 && matching businessID
-    public List<String> analyzeReviewTextForBusiness(String businessID) {
+    public void analyzeReviewTextForBusiness(String businessID) {
         //Get all the Reviews with ratings >= 4 Stars
         selectFromDB("SELECT text " +
                 "FROM review WHERE business_id = " + businessID + " AND stars >= 4",
@@ -138,25 +144,55 @@ public class TermFrequencyAnalyzer {
         countTerms((List)keyTerms.keySet());
 
         //return top k terms
-        return getTopKTerms();
+        List<String> terms = getTopKTerms();
+        writeTopKAttributesToTable(businessID, terms);
     }
 
-    public void writeTopKAttributesToTable(String businessID, List<String> minedAttributes) {
+    private void readInBusinesses() {
+        selectFromDB("SELECT id FROM business;", TableName.BUSINESS);
+    }
+
+    private void writeTopKAttributesToTable(String businessID, List<String> minedAttributes) {
 
         List<String> insertStatements = new LinkedList<>();
 
         for (String keyTerm : minedAttributes) {
-            String sqlStatement = "INSERT INTO BusinessToKeyterms(id, businessID, keyTerm) " +
+            String sqlStatement = "INSERT INTO BusinessKeyTerms(id, businessID, keyTerm) " +
                     "VALUES(" + currentPrimaryKey +", " + businessID + ", " + keyTerm +";";
             insertStatements.add(sqlStatement);
 
             currentPrimaryKey++;
         }
-            writeToTable(insertStatements, TableName.BUSSINESSKEYTERMS);
+            writeToTable(insertStatements, TableName.BUSINESSKEYTERMS);
 
     }
 
+    //Portions of this code used  from here: http://www.sqlitetutorial.net/sqlite-java/select/
     private void writeToTable(List<String> statements, TableName table){
+        try (Connection conn = this.connect();){
+
+            // loop through the result set
+            if (table.equals(TableName.BUSINESSKEYTERMS)) {
+                for(String insertStatement : statements) {
+                    Statement stmt  = conn.createStatement();
+                    stmt.executeUpdate(insertStatement);
+                }
+            }
+
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void runTermFrequencyAnalysis(){
+        initializeDB();
+
+        readInBusinesses();
+
+        for (String business : businessIDs) {
+            System.out.println("Analyzing terms for business with id: " + business);
+            analyzeReviewTextForBusiness(business);
+        }
 
     }
 
