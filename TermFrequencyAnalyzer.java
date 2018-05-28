@@ -1,4 +1,4 @@
-package yelp_recommender_system;
+//package yelp_recommender_system;
 
 import java.sql.*;
 import java.util.*;
@@ -85,10 +85,13 @@ public class TermFrequencyAnalyzer {
 
     //Counts the number of reviews that each noun/adjective
     //occurs in the original list of business reviews.
-    //Then divides by total number of reviews > 4/5 stars.
-    private void countTerms(List<String> nounsAndAdjectives) {
+    private void countTerms(List<String> nounsAndAdjectives, List<String> reviews) {
+        List<String> nounsAndAdjectivesToLower = nounsAndAdjectives.stream().map(String::toLowerCase)
+                .collect(Collectors.toList());
+
+        Set<String> terms = new HashSet<>(nounsAndAdjectivesToLower);
         Integer count = 0;
-        for (String term : nounsAndAdjectives) {
+        for (String term : terms) {
             for (String review : reviews) {
                 if (review.toLowerCase().contains(term.toLowerCase())){
                     count ++;
@@ -99,30 +102,34 @@ public class TermFrequencyAnalyzer {
         }
     }
 
-    private List<String> getTopKTerms() {
+    private List<String> getTopKTerms(Map<String, Integer> termToReviewCount) {
 
         //Sort the terms by values
-        List<Integer> values = (LinkedList<Integer>)termToReviewCount.values();
+        List<Integer> values = new ArrayList<>(termToReviewCount.values());
         values.sort(Comparator.naturalOrder());
 
         //Take the top k values
-        List<Integer> topValues = values.subList(values.size()-k + 1, values.size());
+        List<Integer> topValues = values.subList(values.size()-k, values.size());
 
         //Get the terms which have a min of the top k values
         List<String> topTerms = termToReviewCount.keySet().stream()
                 .filter(x -> termToReviewCount.get(x) > topValues.get(0)).collect(Collectors.toList());
 
         //Cut the terms at k in case there were any with duplicate values.
-        topTerms.subList(0,k);
+        if (topTerms.size() > k) {
+            topTerms.subList(0, k);
+        }
+        System.out.println("Size of top k terms: " + topTerms.size());
         return topTerms;
     }
 
     //Combine all the reviews into one giant text so only hitting the POSTagger
     //once to improve efficiency (hopefully).
-    private String combineReviews(){
+    public String combineReviews(List<String> reviews){
         StringBuilder sb = new StringBuilder();
         for (String review : reviews){
-            sb.append(review + "/n");
+            sb.append(review);
+            sb.append("\n");
         }
         return sb.toString();
     }
@@ -135,16 +142,16 @@ public class TermFrequencyAnalyzer {
                 TableName.REVIEWS);
 
         //Combine text so sent to POSTagger as one large document
-        String allReviews = combineReviews();
+        String allReviews = combineReviews(this.reviews);
 
         //Send them to the POS Tagger
         POSTagger posTagger = new POSTagger();
         Map<String, Integer> keyTerms = posTagger.tagPOS(allReviews);
 
-        countTerms((List)keyTerms.keySet());
+        countTerms(new ArrayList<>(keyTerms.keySet()), this.reviews);
 
         //return top k terms
-        List<String> terms = getTopKTerms();
+        List<String> terms = getTopKTerms(this.termToReviewCount);
         writeTopKAttributesToTable(businessID, terms);
     }
 
@@ -196,5 +203,37 @@ public class TermFrequencyAnalyzer {
 
     }
 
+
+//Unit Tests for everything but the SQL
+/*    public static void main (String[] args) {
+        TermFrequencyAnalyzer analyzer = new TermFrequencyAnalyzer();
+
+        List<String> testReviews = new ArrayList<>();
+        testReviews.add("This is awesome. I love this place. Blah balah blah blah.");
+        testReviews.add("I hate this place. The worst.");
+        testReviews.add("Best food ever.");
+
+        String testCombineMethod = analyzer.combineReviews(testReviews);
+        System.out.println(testCombineMethod);
+
+        Map<String, Integer> keyTermsTest = new HashMap<String, Integer>();
+        keyTermsTest.put("Bob", 5);
+        keyTermsTest.put("bob", 10);
+        keyTermsTest.put("Larry", 13);
+        keyTermsTest.put("Larr1y", 11);
+        keyTermsTest.put("Larererry", 12);
+        keyTermsTest.put("food", 11);
+        keyTermsTest.put("Laveewrry", 10);
+        keyTermsTest.put("Food", 1);
+        keyTermsTest.put("food2", 1);
+        keyTermsTest.put("food1", 1);
+        keyTermsTest.put("food2", 14);
+        keyTermsTest.put("food3", 15);
+
+        analyzer.countTerms(new ArrayList<>(keyTermsTest.keySet()), testReviews);
+
+        List<String> topK = analyzer.getTopKTerms(analyzer.termToReviewCount);
+
+    }*/
 
 }
