@@ -1,8 +1,8 @@
-//package yelp_recommender_system;
-
 import java.sql.*;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 
 /**
  * Takes the reviews from the database and sends the review text to the POS Tagger.
@@ -17,8 +17,6 @@ import java.util.stream.Collectors;
 
 public class TermFrequencyAnalyzer {
 
-    public enum TableName{BUSINESS, REVIEWS, USERS, BUSINESSKEYTERMS};
-
     //Maps the word (either noun or adjective) to the number of reviews it appears in.
     Map<String, Integer> termToReviewCount = new HashMap<>();
 
@@ -28,6 +26,10 @@ public class TermFrequencyAnalyzer {
 
     List<String> keyTerms = new ArrayList<>();
 
+    private static final String NOUN = "N"; // Starts with N, handles NN, NNS, NNP, NNPS
+    private static final String ADJECTIVE = "J"; // Starts with J, handles JJ, JJR, JJS
+    MaxentTagger tagger = null;
+
     //Number of nouns/adjectives to extract from the reviews for each business
     Integer k = 10;
 
@@ -36,22 +38,24 @@ public class TermFrequencyAnalyzer {
 
     //BusinessID, Term, TermRank
     public void initializeDB() {
+        System.out.println("Calling Initialize");
         //Drop the K term table then Create it again for a fresh start.
         List<String> statements = new LinkedList<>();
         statements.add("DROP TABLE 'BusinessKeyTerms';");
         statements.add("CREATE TABLE BusinessKeyTerms(id varchar(255)," +
                 "businessID varchar(255), keyTerm varchar(255));");
-        writeToTable(statements, TableName.BUSINESSKEYTERMS);
+        writeToTable(statements, "BUSINESSKEYTERMS");
 
     }
 
     //This method used from open source code located here: http://www.sqlitetutorial.net/sqlite-java/select/
     private Connection connect() {
         // SQLite connection string
-        String url = "jdbc:sqlite:C://sqlite/db/test.db";
+        String url = "jdbc:sqlite:yelp_db.db";
         Connection conn = null;
         try {
             conn = DriverManager.getConnection(url);
+            System.out.println("Connection established successfully.");
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
@@ -59,25 +63,25 @@ public class TermFrequencyAnalyzer {
     }
 
     //Portions of this code used  from here: http://www.sqlitetutorial.net/sqlite-java/select/
-    private void selectFromDB(String selectStatement, TableName table){
+    private void selectFromDB(String selectStatement, String table) {
 
         try (Connection conn = this.connect();
-             Statement stmt  = conn.createStatement();
-             ResultSet rs    = stmt.executeQuery(selectStatement)){
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(selectStatement)) {
 
             // loop through the result set
-            if (table.equals(TableName.BUSINESS)) {
+            if (table.equals("BUSINESS")) {
                 while (rs.next()) {
                     System.out.println("Reading from business table");
                     businessIDs.add(rs.getString("id"));
                 }
-            } else if (table.equals(TableName.REVIEWS)) {
+            } else if (table.equals("REVIEWS")) {
                 while (rs.next()) {
                     System.out.println("Reading from review table");
                     String temp = rs.getString("text");
                     reviews.add(temp);
                 }
-            } else if (table.equals(TableName.BUSINESSKEYTERMS)) {
+            } else if (table.equals("BUSINESSKEYTERMS")) {
                 while (rs.next()) {
                     System.out.println("Reading from businessKeyTerm table");
                     String temp = rs.getString("keyTerm");
@@ -101,8 +105,8 @@ public class TermFrequencyAnalyzer {
         Integer count = 0;
         for (String term : terms) {
             for (String review : reviews) {
-                if (review.toLowerCase().contains(term.toLowerCase())){
-                    count ++;
+                if (review.toLowerCase().contains(term.toLowerCase())) {
+                    count++;
                     break;
                 }
             }
@@ -117,7 +121,7 @@ public class TermFrequencyAnalyzer {
         values.sort(Comparator.naturalOrder());
 
         //Take the top k values
-        List<Integer> topValues = values.subList(values.size()-k, values.size());
+        List<Integer> topValues = values.subList(values.size() - k, values.size());
 
         //Get the terms which have a min of the top k values
         List<String> topTerms = termToReviewCount.keySet().stream()
@@ -133,9 +137,9 @@ public class TermFrequencyAnalyzer {
 
     //Combine all the reviews into one giant text so only hitting the POSTagger
     //once to improve efficiency (hopefully).
-    public String combineReviews(List<String> reviews){
+    public String combineReviews(List<String> reviews) {
         StringBuilder sb = new StringBuilder();
-        for (String review : reviews){
+        for (String review : reviews) {
             sb.append(review);
             sb.append("\n");
         }
@@ -146,15 +150,14 @@ public class TermFrequencyAnalyzer {
     public void analyzeReviewTextForBusiness(String businessID) {
         //Get all the Reviews with ratings >= 4 Stars
         selectFromDB("SELECT text " +
-                "FROM review WHERE business_id = '" + businessID + "' AND stars >= 4",
-                TableName.REVIEWS);
+                        "FROM review WHERE business_id = '" + businessID + "' AND stars >= 4",
+                "REVIEWS");
 
         //Combine text so sent to POSTagger as one large document
         String allReviews = combineReviews(this.reviews);
 
         //Send them to the POS Tagger
-        POSTagger posTagger = new POSTagger();
-        Map<String, Integer> keyTerms = posTagger.tagPOS(allReviews);
+        Map<String, Integer> keyTerms = tagPOS(allReviews);
 
         countTerms(new ArrayList<>(keyTerms.keySet()), this.reviews);
 
@@ -164,19 +167,19 @@ public class TermFrequencyAnalyzer {
     }
 
     private void readInBusinesses() {
-        selectFromDB("SELECT id FROM business;", TableName.BUSINESS);
+        selectFromDB("SELECT id FROM business;", "BUSINESS");
     }
 
     //Called to get the Top Key Terms for a given business ID from the database.
     public double getKeyTermsFromDB(String businessID1, String businessID2) {
         selectFromDB("Select keyTerm from BusinessKeyTerms Where businessID='" + businessID1 + "';",
-                TableName.BUSINESSKEYTERMS);
+                "BUSINESSKEYTERMS");
 
         List<String> b1KeyTerms = new LinkedList<>(keyTerms);
         keyTerms.clear();
 
         selectFromDB("Select keyTerm from BusinessKeyTerms Where businessID='" + businessID2 + "';",
-                TableName.BUSINESSKEYTERMS);
+                "BUSINESSKEYTERMS");
 
         List<String> b2KeyTerms = new LinkedList<>(keyTerms);
 
@@ -188,11 +191,11 @@ public class TermFrequencyAnalyzer {
         b1Set.retainAll(b2Set);
 
         double jacardSimlarity = 0;
-        if (b1KeyTerms.size() + b2KeyTerms.size() - b1Set.size() !=0) {
-            double b1Size = (double)b1Set.size();
-            double b1KeyTermsSize = (double)b1KeyTerms.size();
-            double b2KeyTermsSize = (double)b2KeyTerms.size();
-            jacardSimlarity = b1Size / (b1KeyTermsSize + b2KeyTermsSize  - b1Size);
+        if (b1KeyTerms.size() + b2KeyTerms.size() - b1Set.size() != 0) {
+            double b1Size = (double) b1Set.size();
+            double b1KeyTermsSize = (double) b1KeyTerms.size();
+            double b2KeyTermsSize = (double) b2KeyTerms.size();
+            jacardSimlarity = b1Size / (b1KeyTermsSize + b2KeyTermsSize - b1Size);
         }
         return jacardSimlarity;
 
@@ -204,23 +207,23 @@ public class TermFrequencyAnalyzer {
 
         for (String keyTerm : minedAttributes) {
             String sqlStatement = "INSERT INTO BusinessKeyTerms(id, businessID, keyTerm) " +
-                    "VALUES(" + currentPrimaryKey +", '" + businessID + "', '" + keyTerm +"';";
+                    "VALUES(" + currentPrimaryKey + ", '" + businessID + "', '" + keyTerm + "';";
             insertStatements.add(sqlStatement);
 
             currentPrimaryKey++;
         }
-            writeToTable(insertStatements, TableName.BUSINESSKEYTERMS);
+        writeToTable(insertStatements, "BUSINESSKEYTERMS");
 
     }
 
     //Portions of this code used  from here: http://www.sqlitetutorial.net/sqlite-java/select/
-    private void writeToTable(List<String> statements, TableName table){
-        try (Connection conn = this.connect();){
+    private void writeToTable(List<String> statements, String table) {
+        try (Connection conn = this.connect();) {
 
             // loop through the result set
-            if (table.equals(TableName.BUSINESSKEYTERMS)) {
-                for(String insertStatement : statements) {
-                    Statement stmt  = conn.createStatement();
+            if (table.equals("BUSINESSKEYTERMS")) {
+                for (String insertStatement : statements) {
+                    Statement stmt = conn.createStatement();
                     stmt.executeUpdate(insertStatement);
                 }
             }
@@ -232,8 +235,10 @@ public class TermFrequencyAnalyzer {
 
 
     //Call this ONCE
-    public void runTermFrequencyAnalysis(){
+    public void runTermFrequencyAnalysis() {
+        System.out.println("Calling Initialize from Main.");
         initializeDB();
+        System.out.println("About to try and read in businesses.");
 
         readInBusinesses();
 
@@ -243,6 +248,50 @@ public class TermFrequencyAnalyzer {
         }
 
     }
+
+    public void initializePOSTagger() {
+        //I had to go with this type of structure because my path is different and I didn't want to mess up other peoples builds by just switching it
+        try {
+            tagger =  new MaxentTagger("lib/english-left3words-distsim.tagger");
+        } catch(Exception ex) {
+            tagger = null;
+        }
+        if(tagger == null) {
+            tagger = new MaxentTagger("yelp_recommender_system/lib/english-left3words-distsim.tagger");
+        }
+    }
+
+    public Map<String, Integer> tagPOS(String sentence){
+        Map<String, Integer> map = new HashMap<>();
+
+        String taggedString = tagger.tagString(sentence);
+
+        // Separate into <word>_<tag>
+        String[] splitTag = taggedString.split(" ");
+
+        for (String splitWord : splitTag){
+            // Split <word>_<tag>
+            int lastInst = splitWord.lastIndexOf("_");
+            String word = splitWord.substring(0, lastInst);
+            String tag = splitWord.substring(lastInst + 1, splitWord.length());
+
+            // Check if noun or adjective
+            if (tag.startsWith(NOUN) || tag.startsWith(ADJECTIVE)){
+                int count = map.containsKey(word) ? map.get(word) : 0;
+                map.put(word, count + 1);
+            }
+        }
+
+        return map;
+    }
+
+    public static void main(String args[]) {
+        TermFrequencyAnalyzer termFrequencyAnalyzer = new TermFrequencyAnalyzer();
+        termFrequencyAnalyzer.runTermFrequencyAnalysis();
+    }
+
+}
+
 
 
 /*
@@ -318,6 +367,7 @@ public class TermFrequencyAnalyzer {
         List<String> keyTerms2 = new LinkedList<>();
         keyTerms2.add("test");
         keyTerms2.add("food");
+        
         keyTerms2.add("seven");
         keyTerms2.add("good");
         keyTerms2.add("meatballs");
@@ -327,4 +377,4 @@ public class TermFrequencyAnalyzer {
 
     }*/
 
-}
+//}
