@@ -26,6 +26,8 @@ public class TermFrequencyAnalyzer {
 
     List<String> keyTerms = new ArrayList<>();
 
+    Map<String, List<String> > businessToTerms = new HashMap<>();
+
     Connection connection;
 
     private static final String NOUN = "N"; // Starts with N, handles NN, NNS, NNP, NNPS
@@ -40,15 +42,6 @@ public class TermFrequencyAnalyzer {
 
     //BusinessID, Term, TermRank
     public void initializeDB() {
-    /*    System.out.println("Calling Initialize");
-        //Drop the K term table then Create it again for a fresh start.
-        List<String> statements = new LinkedList<>();
-        statements.add("DROP TABLE 'BusinessKeyTerms';");
-        statements.add("CREATE TABLE BusinessKeyTerms(id varchar(255)," +
-                "businessID varchar(255), keyTerm varchar(255));");
-        writeToTable(statements, "BUSINESSKEYTERMS");
-
-   */
         connection = connect();
     }
 
@@ -164,7 +157,7 @@ public class TermFrequencyAnalyzer {
 
         //Get all the Reviews with ratings >= 4 Stars
         selectFromDB("SELECT text " +
-                        "FROM review WHERE business_id = '" + businessID + "' AND stars >= 4;",
+                        "FROM review WHERE business_id = '" + businessID + "' AND stars >= 4 AND postal_code LIKE '_____';",
                 "REVIEWS");
 
         if (reviews.size() > 20) {
@@ -178,14 +171,15 @@ public class TermFrequencyAnalyzer {
 
             //return top k terms
             List<String> terms = getTopKTerms(this.termToReviewCount);
-            writeTopKAttributesToTable(businessID, terms);
+            //writeTopKAttributesToTable(businessID, terms);
+            businessToTerms.put(businessID, terms);
         } else {
             System.out.println("Not looking at business " + businessID + "because review count is " + reviews.size());
         }
     }
 
     private void readInBusinesses() {
-        selectFromDB("SELECT id FROM business WHERE review_count >=15;", "BUSINESS");
+        selectFromDB("SELECT id FROM business WHERE review_count >=50;", "BUSINESS");
     }
 
     //Called to get the Top Key Terms for a given business ID from the database.
@@ -219,24 +213,28 @@ public class TermFrequencyAnalyzer {
 
     }
 
-    private void writeTopKAttributesToTable(String businessID, List<String> minedAttributes) {
+    private void writeTopKAttributesToTable() {
 
         //Connection connection = connect();
         PreparedStatement preparedStatement = null;
         String sqlStatement = "INSERT INTO BusinessKeyTerms(id, businessID, keyTerm) " +
                 "VALUES(?,?,?);";
         try {
+
             connection.setAutoCommit(false);
             preparedStatement = connection.prepareStatement(sqlStatement);
-            for (String keyTerm : minedAttributes) {
-                preparedStatement.setInt(1, currentPrimaryKey);
-                preparedStatement.setString(2, businessID);
-                preparedStatement.setString(3, keyTerm);
-                preparedStatement.addBatch();
 
-                currentPrimaryKey++;
+            for (String businessID : businessToTerms.keySet()) {
+                for (String keyTerm : businessToTerms.get(businessID)) {
+                    preparedStatement.setInt(1, currentPrimaryKey);
+                    preparedStatement.setString(2, businessID);
+                    preparedStatement.setString(3, keyTerm);
+                    preparedStatement.addBatch();
+                    currentPrimaryKey++;
+                }
             }
             preparedStatement.executeBatch();
+            businessToTerms.clear();
             connection.commit();
             //connection.close();
         } catch (Exception e) {
@@ -244,32 +242,7 @@ public class TermFrequencyAnalyzer {
             System.out.println(e.getMessage());
         }
 
-
-        //writeToTable(insertStatements, "BUSINESSKEYTERMS");
-
     }
-
-    //Portions of this code used  from here: http://www.sqlitetutorial.net/sqlite-java/select/
-    private void writeToTable(List<String> statements, String table) {
-
-        //try (Connection conn = this.connect();) {
-        try {
-            // loop through the result set
-            if (table.equals("BUSINESSKEYTERMS")) {
-                for (String insertStatement : statements) {
-                    System.out.println("Executing this insertion: " + insertStatement);
-                    Statement stmt = connection.createStatement();
-                    stmt.executeUpdate(insertStatement);
-                }
-            }
-            connection.commit();
-            //connection.close();
-
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
 
     //Call this ONCE
     public void runTermFrequencyAnalysis() {
@@ -281,9 +254,17 @@ public class TermFrequencyAnalyzer {
 
         readInBusinesses();
 
+        int count = 0;
+        int multiple = 0;
         for (String business : businessIDs) {
             System.out.println("Analyzing terms for business with id: " + business);
             analyzeReviewTextForBusiness(business);
+            count ++;
+            if (count % 1000 == 0) {
+                multiple++;
+                writeTopKAttributesToTable();
+                count = 0;
+            }
         }
 
     }
