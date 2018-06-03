@@ -26,6 +26,8 @@ public class TermFrequencyAnalyzer {
 
     List<String> keyTerms = new ArrayList<>();
 
+    Connection connection;
+
     private static final String NOUN = "N"; // Starts with N, handles NN, NNS, NNP, NNPS
     private static final String ADJECTIVE = "J"; // Starts with J, handles JJ, JJR, JJS
     MaxentTagger tagger = null;
@@ -38,7 +40,7 @@ public class TermFrequencyAnalyzer {
 
     //BusinessID, Term, TermRank
     public void initializeDB() {
-        System.out.println("Calling Initialize");
+    /*    System.out.println("Calling Initialize");
         //Drop the K term table then Create it again for a fresh start.
         List<String> statements = new LinkedList<>();
         statements.add("DROP TABLE 'BusinessKeyTerms';");
@@ -46,12 +48,14 @@ public class TermFrequencyAnalyzer {
                 "businessID varchar(255), keyTerm varchar(255));");
         writeToTable(statements, "BUSINESSKEYTERMS");
 
+   */
+        connection = connect();
     }
 
     //This method used from open source code located here: http://www.sqlitetutorial.net/sqlite-java/select/
     private Connection connect() {
         // SQLite connection string
-        String url = "jdbc:sqlite:yelp_db.db";
+        String url = "jdbc:sqlite:yelp_backup.db";
         Connection conn = null;
         try {
             conn = DriverManager.getConnection(url);
@@ -65,29 +69,37 @@ public class TermFrequencyAnalyzer {
     //Portions of this code used  from here: http://www.sqlitetutorial.net/sqlite-java/select/
     private void selectFromDB(String selectStatement, String table) {
 
-        try (Connection conn = this.connect();
-             Statement stmt = conn.createStatement();
+        System.out.println("Executing this statement: " + selectStatement);
+
+        try (//Connection conn = this.connect();
+             Statement stmt = connection.createStatement();
              ResultSet rs = stmt.executeQuery(selectStatement)) {
 
             // loop through the result set
             if (table.equals("BUSINESS")) {
+                System.out.println("Reading in businesses.");
                 while (rs.next()) {
-                    System.out.println("Reading from business table");
                     businessIDs.add(rs.getString("id"));
                 }
+                System.out.print("Found Businesses count ");
+                System.out.println(businessIDs.size());
             } else if (table.equals("REVIEWS")) {
+                reviews.clear();
+                System.out.println("Reading in Reviews.");
                 while (rs.next()) {
-                    System.out.println("Reading from review table");
                     String temp = rs.getString("text");
                     reviews.add(temp);
                 }
+                System.out.print("Found Reviews count ");
+                System.out.println(reviews.size());
             } else if (table.equals("BUSINESSKEYTERMS")) {
+                keyTerms.clear();
                 while (rs.next()) {
-                    System.out.println("Reading from businessKeyTerm table");
                     String temp = rs.getString("keyTerm");
                     keyTerms.add(temp);
-
                 }
+                System.out.print("Found Keyterms count: ");
+                System.out.println(keyTerms.size());
             }
 
         } catch (SQLException e) {
@@ -148,26 +160,32 @@ public class TermFrequencyAnalyzer {
 
     //Selects all the reivews from the Review table with Rating > 4 && matching businessID
     public void analyzeReviewTextForBusiness(String businessID) {
+        this.termToReviewCount.clear();
+
         //Get all the Reviews with ratings >= 4 Stars
         selectFromDB("SELECT text " +
-                        "FROM review WHERE business_id = '" + businessID + "' AND stars >= 4",
+                        "FROM review WHERE business_id = '" + businessID + "' AND stars >= 4;",
                 "REVIEWS");
 
-        //Combine text so sent to POSTagger as one large document
-        String allReviews = combineReviews(this.reviews);
+        if (reviews.size() > 20) {
+            //Combine text so sent to POSTagger as one large document
+            String allReviews = combineReviews(this.reviews);
 
-        //Send them to the POS Tagger
-        Map<String, Integer> keyTerms = tagPOS(allReviews);
+            //Send them to the POS Tagger
+            LinkedList<String> keyTerms = tagPOS(allReviews);
 
-        countTerms(new ArrayList<>(keyTerms.keySet()), this.reviews);
+            countTerms(keyTerms, this.reviews);
 
-        //return top k terms
-        List<String> terms = getTopKTerms(this.termToReviewCount);
-        writeTopKAttributesToTable(businessID, terms);
+            //return top k terms
+            List<String> terms = getTopKTerms(this.termToReviewCount);
+            writeTopKAttributesToTable(businessID, terms);
+        } else {
+            System.out.println("Not looking at business " + businessID + "because review count is " + reviews.size());
+        }
     }
 
     private void readInBusinesses() {
-        selectFromDB("SELECT id FROM business;", "BUSINESS");
+        selectFromDB("SELECT id FROM business WHERE review_count >=15;", "BUSINESS");
     }
 
     //Called to get the Top Key Terms for a given business ID from the database.
@@ -203,30 +221,49 @@ public class TermFrequencyAnalyzer {
 
     private void writeTopKAttributesToTable(String businessID, List<String> minedAttributes) {
 
-        List<String> insertStatements = new LinkedList<>();
+        //Connection connection = connect();
+        PreparedStatement preparedStatement = null;
+        String sqlStatement = "INSERT INTO BusinessKeyTerms(id, businessID, keyTerm) " +
+                "VALUES(?,?,?);";
+        try {
+            connection.setAutoCommit(false);
+            preparedStatement = connection.prepareStatement(sqlStatement);
+            for (String keyTerm : minedAttributes) {
+                preparedStatement.setInt(1, currentPrimaryKey);
+                preparedStatement.setString(2, businessID);
+                preparedStatement.setString(3, keyTerm);
+                preparedStatement.addBatch();
 
-        for (String keyTerm : minedAttributes) {
-            String sqlStatement = "INSERT INTO BusinessKeyTerms(id, businessID, keyTerm) " +
-                    "VALUES(" + currentPrimaryKey + ", '" + businessID + "', '" + keyTerm + "';";
-            insertStatements.add(sqlStatement);
-
-            currentPrimaryKey++;
+                currentPrimaryKey++;
+            }
+            preparedStatement.executeBatch();
+            connection.commit();
+            //connection.close();
+        } catch (Exception e) {
+            System.out.println("Something went wrong with prepared statement");
+            System.out.println(e.getMessage());
         }
-        writeToTable(insertStatements, "BUSINESSKEYTERMS");
+
+
+        //writeToTable(insertStatements, "BUSINESSKEYTERMS");
 
     }
 
     //Portions of this code used  from here: http://www.sqlitetutorial.net/sqlite-java/select/
     private void writeToTable(List<String> statements, String table) {
-        try (Connection conn = this.connect();) {
 
+        //try (Connection conn = this.connect();) {
+        try {
             // loop through the result set
             if (table.equals("BUSINESSKEYTERMS")) {
                 for (String insertStatement : statements) {
-                    Statement stmt = conn.createStatement();
+                    System.out.println("Executing this insertion: " + insertStatement);
+                    Statement stmt = connection.createStatement();
                     stmt.executeUpdate(insertStatement);
                 }
             }
+            connection.commit();
+            //connection.close();
 
         } catch (SQLException e) {
             System.out.println(e.getMessage());
@@ -236,6 +273,8 @@ public class TermFrequencyAnalyzer {
 
     //Call this ONCE
     public void runTermFrequencyAnalysis() {
+        System.out.println("Initializing POSTagger");
+        initializePOSTagger();
         System.out.println("Calling Initialize from Main.");
         initializeDB();
         System.out.println("About to try and read in businesses.");
@@ -252,17 +291,19 @@ public class TermFrequencyAnalyzer {
     public void initializePOSTagger() {
         //I had to go with this type of structure because my path is different and I didn't want to mess up other peoples builds by just switching it
         try {
-            tagger =  new MaxentTagger("lib/english-left3words-distsim.tagger");
+            tagger =  new MaxentTagger("/local/weka/lib/stanford-postagger-2018-02-27/models/english-left3words-distsim.tagger");
         } catch(Exception ex) {
             tagger = null;
         }
         if(tagger == null) {
-            tagger = new MaxentTagger("yelp_recommender_system/lib/english-left3words-distsim.tagger");
+            tagger = new MaxentTagger("/local/weka/lib/stanford-postagger-2018-02-27/models/english-left3words-distsim.tagger");
         }
+
+        System.out.println("Tagger intialized. ");
     }
 
-    public Map<String, Integer> tagPOS(String sentence){
-        Map<String, Integer> map = new HashMap<>();
+    public LinkedList<String> tagPOS(String sentence){
+        LinkedList<String> map = new LinkedList<>();
 
         String taggedString = tagger.tagString(sentence);
 
@@ -277,8 +318,9 @@ public class TermFrequencyAnalyzer {
 
             // Check if noun or adjective
             if (tag.startsWith(NOUN) || tag.startsWith(ADJECTIVE)){
-                int count = map.containsKey(word) ? map.get(word) : 0;
-                map.put(word, count + 1);
+                if (!map.contains(word.toLowerCase())) {
+                    map.add(word.toLowerCase());
+                }
             }
         }
 
@@ -292,89 +334,3 @@ public class TermFrequencyAnalyzer {
 
 }
 
-
-
-/*
-    public double testSimilarityOfKeyTerms(List<String> keyTerms1, List<String> keyTerms2){
-
-        keyTerms = keyTerms1;
-
-        List<String> b1KeyTerms = new LinkedList<>(keyTerms);
-        keyTerms.clear();
-
-        keyTerms = keyTerms2;
-        List<String> b2KeyTerms = new LinkedList<>(keyTerms);
-
-
-        //This will make a set of unique terms between the two
-        Set<String> b1Set = new HashSet<>(b1KeyTerms);
-        Set<String> b2Set = new HashSet<>(b2KeyTerms);
-
-        //B1 now contains the intersect of B1 and B2
-        b1Set.retainAll(b2Set);
-*/
-
-
-//        double jacardSimlarity = 0;
-//        if (b1KeyTerms.size() + b2KeyTerms.size() - b1Set.size() !=0) {
-//            double b1Size = (double)b1Set.size();
-//            double b1KeyTermsSize = (double)b1KeyTerms.size();
-//            double b2KeyTermsSize = (double)b2KeyTerms.size();
-//            jacardSimlarity = b1Size / (b1KeyTermsSize + b2KeyTermsSize  - b1Size);
-//        }
-//        return jacardSimlarity;
-//    }
-
-//Unit Tests for everything but the SQL
-/*    public static void main (String[] args) {
-        TermFrequencyAnalyzer analyzer = new TermFrequencyAnalyzer();*/
-
-/*        List<String> testReviews = new ArrayList<>();
-        testReviews.add("This is awesome. I love this place. Blah balah blah blah.");
-        testReviews.add("I hate this place. The worst.");
-        testReviews.add("Best food ever.");
-
-        String testCombineMethod = analyzer.combineReviews(testReviews);
-        System.out.println(testCombineMethod);
-
-        Map<String, Integer> keyTermsTest = new HashMap<String, Integer>();
-        keyTermsTest.put("Bob", 5);
-        keyTermsTest.put("bob", 10);
-        keyTermsTest.put("Larry", 13);
-        keyTermsTest.put("Larr1y", 11);
-        keyTermsTest.put("Larererry", 12);
-        keyTermsTest.put("food", 11);
-        keyTermsTest.put("Laveewrry", 10);
-        keyTermsTest.put("Food", 1);
-        keyTermsTest.put("food2", 1);
-        keyTermsTest.put("food1", 1);
-        keyTermsTest.put("food2", 14);
-        keyTermsTest.put("food3", 15);
-
-        analyzer.countTerms(new ArrayList<>(keyTermsTest.keySet()), testReviews);
-
-        List<String> topK = analyzer.getTopKTerms(analyzer.termToReviewCount);*/
-
-/*
-
-        List<String> keyTerms1 = new LinkedList<>();
-        keyTerms1.add("test");
-        keyTerms1.add("food");
-        keyTerms1.add("seven");
-        keyTerms1.add("good");
-
-
-        List<String> keyTerms2 = new LinkedList<>();
-        keyTerms2.add("test");
-        keyTerms2.add("food");
-        
-        keyTerms2.add("seven");
-        keyTerms2.add("good");
-        keyTerms2.add("meatballs");
-        keyTerms2.add("testthis");
-
-        analyzer.testSimilarityOfKeyTerms(keyTerms1, keyTerms2);
-
-    }*/
-
-//}
