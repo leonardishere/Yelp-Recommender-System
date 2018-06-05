@@ -15,3 +15,5 @@ To run in CMD:
 
 javac -cp lib\stanford-postagger.jar POSTagger.java Main.java
 java -cp .;lib\stanford-postagger.jar Main
+
+on the dc machine I used .:lib/filename.jar for it to work

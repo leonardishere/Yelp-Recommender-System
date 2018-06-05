@@ -23,6 +23,19 @@ public class Helper {
 	}
 
 	/**
+	 * Creates an array with all elements initialized to zero.
+	 * @param length the number of elements in the array
+	 * @return the array
+	 */
+	public static double[] zeros(int length) {
+		double[] arr = new double[length];
+		for(int i = 0; i < length; ++i) {
+			arr[i] = 0;
+		}
+		return arr;
+	}
+	
+	/**
 	 * Creates a 2D matrix with all elements initialized to zero.
 	 * @param numRows the number of rows in the matrix (dimension 1)
 	 * @param numCols the number of cols in the matrix (dimension 2)
@@ -73,5 +86,64 @@ public class Helper {
 			builder.append("\n");
 		}
 		return builder.toString();
+	}
+	
+	/**
+	 * Sums the values in the array.
+	 * @param arr the values to sum
+	 * @return the sum
+	 */
+	public static double sum(double[] arr) {
+		double out = 0;
+		for(double val : arr) {
+			out += val;
+		}
+		return out;
+	}
+	
+	/**
+	 * Calculates the element wise subtraction difference of two vectors, v1-v2.
+	 * @param v1 the first vector
+	 * @param v2 the second vector
+	 * @return v1-v2
+	 */
+	public static double[] vvSub(double[] v1, double[] v2) {
+		int length = v1.length;
+		if(v2.length != length) {
+			System.err.println("Error: input vectors must be the same length.");
+			return null;
+		}
+		
+		double[] v3 = new double[length];
+		for(int i = 0; i < length; ++i) {
+			v3[i] = v1[i] - v2[i];
+		}
+		return v3;
+	}
+	
+	/**
+	 * Calculates the element wise multiplation of a scalor and a vector.
+	 * @param v
+	 * @param s
+	 * @return
+	 */
+	public static double[] svMul(double s, double[] v) {
+		double[] res = new double[v.length];
+		for(int i = 0; i < v.length; ++i) {
+			res[i] = s*v[i];
+		}
+		return res;
+	}
+
+	/**
+	 * Returns the one hot encoding of
+	 * @param length
+	 * @param hot
+	 * @return
+	 */
+	public static double[] onehot(int length, int hot) {
+		double[] arr = zeros(length);
+		arr[hot] = 1.0;
+		return arr;
 	}
 }
