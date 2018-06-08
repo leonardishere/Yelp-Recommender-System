@@ -183,6 +183,7 @@ public class TermFrequencyAnalyzer {
     }
 
     //Called to get the Top Key Terms for a given business ID from the database.
+    //Call initializeDB() function once before.
     public double getKeyTermsFromDB(String businessID1, String businessID2) {
         selectFromDB("Select keyTerm from BusinessKeyTerms Where businessID='" + businessID1 + "';",
                 "BUSINESSKEYTERMS");
