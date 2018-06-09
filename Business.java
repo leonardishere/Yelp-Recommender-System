@@ -222,10 +222,13 @@ public class Business{
         int larger = 0;
         double count = 0;
         //double size = temp1.size();
+	double mysize;
         if (temp2.size() > temp1.size()){
           larger = 2;
+	  mysize = temp2.size();
         }else{
           larger = 1;
+	  mysize = temp1.size();
         }
         if (larger == 1){
           for(String key : temp1.keySet()){
@@ -260,7 +263,7 @@ public class Business{
           }
         }
 
-        mysimilarity[counter] = count/size;
+        mysimilarity[counter] = count/mysize;
 
       }
 
