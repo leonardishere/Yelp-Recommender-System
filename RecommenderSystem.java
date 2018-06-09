@@ -32,7 +32,10 @@ public class RecommenderSystem {
 		conn = USE_SQLITE ? DatabaseReader.connect_sqlite() : DatabaseReader.connect_mysql();
 		loadUsers();
 		loadBusinesses();
+		loadAttributes();
+		loadCategories();
 		loadTrainingRatings();
+		loadTestingRatings();
 		boolean loadedModel = loadModel();
 		if(!loadedModel) createModel();
 	}
@@ -54,6 +57,24 @@ public class RecommenderSystem {
 		numBusinesses = businesses.length;
 		for(int i = 0; i < numBusinesses; ++i) {
 			businessMap.add(businesses[i].id);
+		}
+	}
+	
+	public void loadAttributes() {
+		System.out.println("Begin loading attributes");
+		ArrayList<BusinessAttribute> attributes = DatabaseReader.loadAttributes(conn);
+		for(int i = 0; i < attributes.size(); ++i) {
+			BusinessAttribute attribute = attributes.get(i);
+			businesses[businessMap.convert(attribute.business_id)].addAttribute(attribute.name, attribute.value);
+		}
+	}
+	
+	public void loadCategories() {
+		System.out.println("Begin loading categories");
+		ArrayList<BusinessAttribute> categories = DatabaseReader.loadCategories(conn);
+		for(int i = 0; i < categories.size(); ++i) {
+			BusinessAttribute category = categories.get(i);
+			businesses[businessMap.convert(category.business_id)].addAttribute(category.name, category.value);
 		}
 	}
 

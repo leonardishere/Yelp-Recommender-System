@@ -18,6 +18,13 @@ public class DatabaseReader {
 
 	public static final String SQLITE_URL = "jdbc:sqlite:C:/sqlite/db/yelp.db";
 	
+	public static final int NUM_USERS = 		1326101;
+	public static final int NUM_BUSINESSES = 	 174567;
+	public static final int NUM_ATTRIBUTES =	1310575;
+	public static final int NUM_CATEGORIES = 	 667527;
+	public static final int NUM_TRAINING_DATA = 4208386;
+	public static final int NUM_TESTING_DATA = 	1053283;
+	
 	/**
 	 * Creates a connection to the mysql database.
 	 * @return
@@ -52,7 +59,7 @@ public class DatabaseReader {
 	 * @return the user
 	 */
 	public static User[] loadUsers(Connection conn) {
-		ArrayList<User> users = new ArrayList<>();
+		ArrayList<User> users = new ArrayList<>(NUM_USERS);
 		
 		Statement stmt;
 		try {
@@ -60,10 +67,9 @@ public class DatabaseReader {
 			String query = "select distinct id from user order by id asc";
 			ResultSet rs = stmt.executeQuery(query);
 			while(rs.next()) {
-				//String id = rs.getString(1);
-				//userMap.add(id);
 				users.add(new User(rs.getString(1)));
-			}			
+			}
+			rs.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
@@ -78,7 +84,7 @@ public class DatabaseReader {
 	 * @return the business 
 	 */
 	public static Business[] loadBusinesses(Connection conn) {
-		ArrayList<Business> businesses = new ArrayList<>();
+		ArrayList<Business> businesses = new ArrayList<>(NUM_BUSINESSES);
 		try{
 			Statement stmt = conn.createStatement();
 			String query = "select id, name, neighborhood, address, city, state, postal_code, latitude, longitude, stars, review_count, is_open from business order by id asc";
@@ -86,6 +92,7 @@ public class DatabaseReader {
 			while(rs.next()) {
 				businesses.add(new Business(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6), rs.getString(7), rs.getDouble(8), rs.getDouble(9), rs.getDouble(10), rs.getInt(11), rs.getBoolean(12)));
 			}
+			rs.close();
 		} catch(Exception e){
 			e.printStackTrace();
 		} 
@@ -95,15 +102,52 @@ public class DatabaseReader {
 		return businesses2;
 	}
 	
-	public static ArrayList<UserBusinessInteraction> loadTrainingData(Connection conn, boolean useSqlite){
-		int numRatings = 4208386;
-		ArrayList<UserBusinessInteraction> interactions = new ArrayList<>(numRatings);
+	public static ArrayList<BusinessAttribute> loadAttributes(Connection conn){
+		ArrayList<BusinessAttribute> attributes = new ArrayList<>(NUM_ATTRIBUTES);
 		try{
 			Statement stmt = conn.createStatement();
-			String query = useSqlite ? "select user_id, business_id, stars from review where date < datetime('2017-01-27')" : "select user_id, business_id, stars from review where date < '2017-01-27'";
+			String query = "select business_id, name, value from attribute";
 			ResultSet rs = stmt.executeQuery(query);
 			while(rs.next()) {
-				interactions.add(new UserBusinessInteraction(rs.getString(1), rs.getString(2), rs.getInt(3)));
+				attributes.add(new BusinessAttribute(rs.getString(1), rs.getString(2), rs.getString(3)));
+			}
+			rs.close();
+		} catch(Exception e){
+			e.printStackTrace();
+		}
+		return attributes;
+	}
+	
+	public static ArrayList<BusinessAttribute> loadCategories(Connection conn){
+		ArrayList<BusinessAttribute> categories = new ArrayList<>(NUM_CATEGORIES);
+		try{
+			Statement stmt = conn.createStatement();
+			String query = "select business_id, category from category";
+			ResultSet rs = stmt.executeQuery(query);
+			while(rs.next()) {
+				categories.add(new BusinessAttribute(rs.getString(1), "Category", rs.getString(2)));
+			}
+			rs.close();
+		} catch(Exception e){
+			e.printStackTrace();
+		}
+		return categories;
+	}
+	
+	public static ArrayList<UserBusinessInteraction> loadTrainingData(Connection conn, boolean useSqlite){
+		ArrayList<UserBusinessInteraction> interactions = new ArrayList<>(NUM_TESTING_DATA);
+		try{
+			int step = 1000000;
+			for(int i = 0; i < NUM_TESTING_DATA; i += step) {
+				Statement stmt = conn.createStatement();
+				String query = useSqlite 
+						? "select user_id, business_id, stars from review where date < datetime('2017-01-27') limit " + i + ", " + step 
+						: "select user_id, business_id, stars from review where date < '2017-01-27' limit " + i + ", " + step;
+				ResultSet rs = stmt.executeQuery(query);
+				while(rs.next()) {
+					interactions.add(new UserBusinessInteraction(rs.getString(1), rs.getString(2), rs.getInt(3)));
+				}
+				rs.close();
 			}
 		} catch(Exception e){
 			e.printStackTrace();
@@ -112,8 +156,7 @@ public class DatabaseReader {
 	}
 	
 	public static ArrayList<UserBusinessInteraction> loadTestingData(Connection conn, boolean useSqlite){
-		int numRatings = 1053283;
-		ArrayList<UserBusinessInteraction> interactions = new ArrayList<>(numRatings);
+		ArrayList<UserBusinessInteraction> interactions = new ArrayList<>(NUM_TRAINING_DATA);
 		try{
 			Statement stmt = conn.createStatement();
 			String query = useSqlite ? "select user_id, business_id, stars from review where date >= datetime('2017-01-27')" : "select user_id, business_id, stars from review where date >= '2017-01-27'"; 
@@ -121,6 +164,7 @@ public class DatabaseReader {
 			while(rs.next()) {
 				interactions.add(new UserBusinessInteraction(rs.getString(1), rs.getString(2), rs.getInt(3)));
 			}
+			rs.close();
 		} catch(Exception e){
 			e.printStackTrace();
 		}
@@ -130,11 +174,12 @@ public class DatabaseReader {
 	public static String getLatestModel(Connection conn) {
 		try {
 			Statement stmt = conn.createStatement();
-	        String query = "select iters, filepath from models where iters in (select max(iters) from models);";
+	        String query = "select iters, filepath from model where iters in (select max(iters) from model);";
 	        ResultSet rs = stmt.executeQuery(query);
 	        if(rs.next()) {
 	        	return rs.getString(2);
 	        }
+			rs.close();
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
@@ -144,7 +189,7 @@ public class DatabaseReader {
 	public static boolean saveModel(Connection conn, int numIters, String filepath) {
 		try {
             conn.setAutoCommit(false);
-            String sqlStatement = "INSERT INTO models(iter, filepath) VALUES(?,?);";
+            String sqlStatement = "INSERT INTO model(iter, filepath) VALUES(?,?);";
         	PreparedStatement preparedStatement = conn.prepareStatement(sqlStatement);
             preparedStatement.setInt(1, numIters);
             preparedStatement.setString(2, filepath);

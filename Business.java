@@ -21,8 +21,8 @@ public class Business{
   public double stars;
   public int review_count;
   public boolean is_open;
-  public ArrayList<String> category;
-  public ArrayList<String> attributes;
+  public ArrayList<String> category = null;
+  public static ArrayList<String> attributes = null;
 
   public Map<String, Map<String, Boolean>> jsonmap = new HashMap<>();
   public Map<String, String> strmap = new HashMap<>();
@@ -96,6 +96,48 @@ public class Business{
     boolval.add("WheelchairAccessible");
 
     numericval.add("RestaurantsPriceRange2"); //multiint
+    
+    if(attributes == null) {
+    	attributes = new ArrayList<>();
+        attributes.add("AcceptsInsurance");
+        attributes.add("AgesAllowed");
+        attributes.add("Alcohol");
+    	attributes.add("Ambience");
+        attributes.add("BestNights");
+        attributes.add("BikeParking");
+        attributes.add("BusinessAcceptsBitcoin");
+        attributes.add("BusinessAcceptsCreditCards");
+        attributes.add("BusinessParking");
+        attributes.add("ByAppointmentOnly");
+        attributes.add("BYOB");
+        attributes.add("BYOBCorkage");
+        attributes.add("Caters");
+        attributes.add("CoatCheck");
+        attributes.add("Corkage");
+        attributes.add("DietaryRestrictions");
+        attributes.add("DogsAllowed");
+        attributes.add("DriveThru");
+        attributes.add("GoodForDancing");
+        attributes.add("GoodForKids");
+        attributes.add("GoodForMeal");
+        attributes.add("HairSpecializesIn");
+        attributes.add("HappyHour");
+        attributes.add("HasTV");
+        attributes.add("Music");
+        attributes.add("NoiseLevel");
+        attributes.add("Open24Hours");
+        attributes.add("OutdoorSeating");
+        attributes.add("RestaurantsAttire");
+        attributes.add("RestaurantsCounterService");
+        attributes.add("RestaurantsDelivery");
+        attributes.add("RestaurantsGoodForGroups");
+        attributes.add("RestaurantsReservations");
+        attributes.add("RestaurantsTableService");
+        attributes.add("RestaurantsTakeOut");
+        attributes.add("Smoking");
+        attributes.add("WheelchairAccessible");
+        attributes.add("WiFi");
+    }
 
     //TODO: re-enable this
     /*
@@ -136,7 +178,7 @@ public class Business{
         }else if (str2.equals("true")){
           boolstr2 = true;
         }
-        System.out.println("Key:" + str1 + "\tValue:"+ boolstr2);
+        //System.out.println("Key:" + str1 + "\tValue:"+ boolstr2);
         tempmap.put(str1, boolstr2);
         //System.out.println("Key: " + field.getKey() + "\tValue:" + field.getValue());
       }
