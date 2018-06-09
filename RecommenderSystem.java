@@ -58,6 +58,7 @@ public class RecommenderSystem {
 	}
 
 	public void loadTrainingRatings() {
+		System.out.println("Begin loading training data");
 		ArrayList<UserBusinessInteraction> trainingData = DatabaseReader.loadTrainingData(conn, USE_SQLITE);
 		for(UserBusinessInteraction data : trainingData) {
 			users[userMap.convert(data.userID)].addRating(data.businessID, data.rating);
@@ -65,12 +66,17 @@ public class RecommenderSystem {
 	}
 	
 	public void loadTestingRatings() {
+		System.out.println("Begin loading testing data");
 		testingData = DatabaseReader.loadTestingData(conn, USE_SQLITE);
 	}
 	
 	public boolean loadModel() {
+		System.out.println("Begin loading model");
 		String filepath = DatabaseReader.getLatestModel(conn);
-        if(filepath == null) return false;
+        if(filepath == null) {
+    		System.out.println("Cancel loading model");
+        	return false;
+        }
         
         //deserialize
         model = null;
@@ -93,11 +99,13 @@ public class RecommenderSystem {
 	}
 	
 	public void createModel() {
+		System.out.println("Begin creating new model");
 		numIters = 0;
 		model = new Model();
 	}
 	
 	public boolean saveModel() {
+		System.out.println("Begin saving model");
     	String filepath = String.format("model_%d.ser", numIters);
 		// Serialization 
         try{   
@@ -118,11 +126,7 @@ public class RecommenderSystem {
 	}
 	
 	public void train() {
-		if(numIters == 0) {
-			double rmse = rmse();
-			System.out.printf("finished iter %4. rmse: %f\n", numIters, rmse);
-		}
-		
+		System.out.println("Begin new training iteration");
 		double eta = 0.0001;
 		Random rand = new Random();
 		//does 1000 mini-iterations for every one large-iteration
@@ -152,6 +156,7 @@ public class RecommenderSystem {
 	}
 	
 	public double rmse() {
+		System.out.println("Begin calculating rmse");
 		double squaredErrorSum = 0;
 		for(int i = 0; i < testingData.size(); ++i) {
 			double[][] assembledSimilarityMatrix = Helper.zeros(NUM_STARS, NUM_FEATURES);
@@ -179,7 +184,14 @@ public class RecommenderSystem {
 	public static void main(String[] args) {
 		System.out.println("Program start");
 		RecommenderSystem recSys = new RecommenderSystem();
-		while(recSys.numIters < 1000) {
+
+		if(recSys.numIters == 0) {
+			double rmse = recSys.rmse();
+			System.out.printf("finished iter %4. rmse: %f\n", recSys.numIters, rmse);
+		}
+
+		
+		while(recSys.numIters < 1) {
 			recSys.train();
 		}
 		System.out.println("Program end");

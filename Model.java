@@ -2,19 +2,20 @@ import java.io.Serializable;
 
 public class Model implements Serializable{
 	
-	public static final int NUM_STARS = 5, NUM_FEATURES = 41;
-	private static final double[] MULTIPLIERS = new double[] {1,2,3,4,5};
-	private double[][] weights = null;
-	private double[] biases = null;
-	private double[][] m0 = null, m1 = null;
-	private double[] v2 = null, v3 = null, v4 = null, v7 = null, v8 = null;
-	private double s5 = 0, s6 = 0, s9 = 0;
-	public int iters = 0;
-	
 	/**
 	 * 
 	 */
-	private static final long serialVersionUID = 6587042410056123286L;
+	private static final long serialVersionUID = -29680847074887330L;
+	
+	public static final int NUM_STARS = 5, NUM_FEATURES = 41;
+	public static final double[] MULTIPLIERS = new double[] {1,2,3,4,5};
+	public double[][] weights = null;
+	public double[] biases = null;
+	public double[][] m0 = null, m1 = null;
+	public double[] v2 = null, v3 = null, v4 = null, v7 = null, v8 = null;
+	public double s5 = 0, s6 = 0, s9 = 0;
+	public int iters = 0;
+	
 
 	public Model() {
 		weights = Helper.rand(NUM_STARS, NUM_FEATURES, 0.0, 0.1);

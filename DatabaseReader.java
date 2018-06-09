@@ -96,7 +96,8 @@ public class DatabaseReader {
 	}
 	
 	public static ArrayList<UserBusinessInteraction> loadTrainingData(Connection conn, boolean useSqlite){
-		ArrayList<UserBusinessInteraction> interactions = new ArrayList<>();
+		int numRatings = 4208386;
+		ArrayList<UserBusinessInteraction> interactions = new ArrayList<>(numRatings);
 		try{
 			Statement stmt = conn.createStatement();
 			String query = useSqlite ? "select user_id, business_id, stars from review where date < datetime('2017-01-27')" : "select user_id, business_id, stars from review where date < '2017-01-27'";
@@ -111,7 +112,8 @@ public class DatabaseReader {
 	}
 	
 	public static ArrayList<UserBusinessInteraction> loadTestingData(Connection conn, boolean useSqlite){
-		ArrayList<UserBusinessInteraction> interactions = new ArrayList<>();
+		int numRatings = 1053283;
+		ArrayList<UserBusinessInteraction> interactions = new ArrayList<>(numRatings);
 		try{
 			Statement stmt = conn.createStatement();
 			String query = useSqlite ? "select user_id, business_id, stars from review where date >= datetime('2017-01-27')" : "select user_id, business_id, stars from review where date >= '2017-01-27'"; 
