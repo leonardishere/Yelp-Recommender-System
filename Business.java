@@ -37,7 +37,7 @@ public class Business{
 
   public ArrayList<String> numericval = new ArrayList<String>();
 
-  private static TermFrequencyAnalyzer termFrequencyAnalyzer = null;
+  //private static TermFrequencyAnalyzer termFrequencyAnalyzer = null; //TODO: re-enable this
   
   public Business(String id, String name, String neighborhood, String address, String city, String state, String postal_code, double latitude, double longitude, double stars, int review_count, boolean is_open){
     this.id = id;
@@ -97,10 +97,13 @@ public class Business{
 
     numericval.add("RestaurantsPriceRange2"); //multiint
 
+    //TODO: re-enable this
+    /*
     if(termFrequencyAnalyzer == null) {
     	termFrequencyAnalyzer = new TermFrequencyAnalyzer();
     	termFrequencyAnalyzer.initializeDB();
     }
+    */
   }
 
   public void addAttribute(String name, String val){
@@ -277,7 +280,9 @@ public class Business{
     }
     
     mysimilarity[39] = Helper.jaccardSimilarity(category, other.category);			//category
-    mysimilarity[40] = termFrequencyAnalyzer.getKeyTermsFromDB(this.id, other.id); 	//postagger
+    //TODO: re-enable this
+    //mysimilarity[40] = termFrequencyAnalyzer.getKeyTermsFromDB(this.id, other.id); 	//postagger
+    mysimilarity[40] = 0;
 
     return mysimilarity;
   }

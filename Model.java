@@ -9,6 +9,7 @@ public class Model implements Serializable{
 	private double[][] m0 = null, m1 = null;
 	private double[] v2 = null, v3 = null, v4 = null, v7 = null, v8 = null;
 	private double s5 = 0, s6 = 0, s9 = 0;
+	public int iters = 0;
 	
 	/**
 	 * 

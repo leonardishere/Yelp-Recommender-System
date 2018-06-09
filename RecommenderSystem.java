@@ -1,20 +1,10 @@
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Random;
-import java.util.Set;
 
 /**
  * RecommenderSystem is the main class of the yelp recommender system.
@@ -34,8 +24,12 @@ public class RecommenderSystem {
 	public Model model = null;
 	public int numIters = 0;
 	public ArrayList<UserBusinessInteraction> testingData = null;
+	public static final String SQLITE_YELP_DB_URL = "jdbc:sqlite:C:/sqlite/db/yelp.db";
+	public static final boolean USE_SQLITE = false; //as opposed to mysql
+	public Connection conn = null;
 
 	public RecommenderSystem() {
+		conn = USE_SQLITE ? DatabaseReader.connect_sqlite() : DatabaseReader.connect_mysql();
 		loadUsers();
 		loadBusinesses();
 		loadTrainingRatings();
@@ -45,7 +39,7 @@ public class RecommenderSystem {
 	
 	public void loadUsers() {
 		System.out.println("Begin loading users");
-		users = DatabaseReader.loadUsers();
+		users = DatabaseReader.loadUsers(conn);
 		userMap = new KeyMap();
 		numUsers = users.length;
 		for(int i = 0; i < numUsers; ++i) {
@@ -55,7 +49,7 @@ public class RecommenderSystem {
 	
 	public void loadBusinesses() {
 		System.out.println("Begin loading businesses");
-		businesses = DatabaseReader.loadBusinesses();
+		businesses = DatabaseReader.loadBusinesses(conn);
 		businessMap = new KeyMap();
 		numBusinesses = businesses.length;
 		for(int i = 0; i < numBusinesses; ++i) {
@@ -64,53 +58,21 @@ public class RecommenderSystem {
 	}
 
 	public void loadTrainingRatings() {
-		ArrayList<UserBusinessInteraction> trainingData = DatabaseReader.loadTrainingData();
+		ArrayList<UserBusinessInteraction> trainingData = DatabaseReader.loadTrainingData(conn, USE_SQLITE);
 		for(UserBusinessInteraction data : trainingData) {
 			users[userMap.convert(data.userID)].addRating(data.businessID, data.rating);
 		}
 	}
 	
 	public void loadTestingRatings() {
-		testingData = DatabaseReader.loadTestingData();
+		testingData = DatabaseReader.loadTestingData(conn, USE_SQLITE);
 	}
 	
 	public boolean loadModel() {
-		//int numIters = -1;
-		String filepath = "";
-		boolean found = false;
-		
-		Connection conn = null;
-        try {
-            // db parameters
-            String url = "jdbc:sqlite:C:/sqlite/db/models.db";
-            // create a connection to the database
-            conn = DriverManager.getConnection(url);
-            
-            //System.out.println("Connection to SQLite has been established.");
-            Statement stmt = conn.createStatement();
-            String query = "select iters, filepath from models where iters in (select max(iters) from models);";
-            ResultSet rs = stmt.executeQuery(query);
-            if(rs.next()) {
-            	numIters = rs.getInt(1);
-            	filepath = rs.getString(2);
-            	found = true;
-            }
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        } finally {
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ex) {
-                System.out.println(ex.getMessage());
-            }
-        }
-        
-        if(!found) return false;
+		String filepath = DatabaseReader.getLatestModel(conn);
+        if(filepath == null) return false;
         
         //deserialize
-        boolean success = true;
         model = null;
         try {   
             // Reading the object from a file
@@ -119,21 +81,15 @@ public class RecommenderSystem {
              
             // Method for deserialization of object
             model = (Model) in.readObject();
+            numIters = model.iters;
              
             in.close();
             file.close();
-             
-            //System.out.println("Object has been deserialized ");
-            //System.out.println("a = " + object1.a);
-            //System.out.println("b = " + object1.b);
-        } catch(IOException ex) {
-            System.err.println("IOException is caught");
-            success = false;
-        } catch(ClassNotFoundException ex) {
-            System.err.println("ClassNotFoundException is caught");
-            success = false;
-        }
-        return success;
+        } catch(Exception e) {
+            e.printStackTrace();
+            return false;
+        } 
+        return true;
 	}
 	
 	public void createModel() {
@@ -142,7 +98,6 @@ public class RecommenderSystem {
 	}
 	
 	public boolean saveModel() {
-		boolean success = true;
     	String filepath = String.format("model_%d.ser", numIters);
 		// Serialization 
         try{   
@@ -155,42 +110,19 @@ public class RecommenderSystem {
              
             out.close();
             file.close();
-             
-            //System.out.println("Object has been serialized");
-        } catch(IOException ex) {
-            //System.out.println("IOException is caught");
-        	System.err.println("could not write model");
-        	success = false;
+        } catch(Exception e) {
+        	e.printStackTrace();
+            return false;
         }
-        
-        if(!success) return false;
-
-        Connection conn = null;
-        PreparedStatement preparedStatement = null;
-        String sqlStatement = "INSERT INTO models(iter, filepath) VALUES(?,?);";
-        try {
-        	// db parameters
-            String url = "jdbc:sqlite:C:/sqlite/db/models.db";
-            // create a connection to the database
-            conn = DriverManager.getConnection(url);
-            
-            conn.setAutoCommit(false);
-            preparedStatement = conn.prepareStatement(sqlStatement);
-            preparedStatement.setInt(1, numIters);
-            preparedStatement.setString(2, filepath);
-            preparedStatement.addBatch();
-            preparedStatement.executeBatch();
-            
-        } catch (Exception e) {
-            System.err.println("Something went wrong with prepared statement");
-            System.err.println(e.getMessage());
-            success = false;
-        }
-        
-        return success;
+        return DatabaseReader.saveModel(conn, numIters, filepath);
 	}
 	
 	public void train() {
+		if(numIters == 0) {
+			double rmse = rmse();
+			System.out.printf("finished iter %4. rmse: %f\n", numIters, rmse);
+		}
+		
 		double eta = 0.0001;
 		Random rand = new Random();
 		//does 1000 mini-iterations for every one large-iteration
