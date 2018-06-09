@@ -182,7 +182,7 @@ public class Business{
         tempmap.put(str1, boolstr2);
         //System.out.println("Key: " + field.getKey() + "\tValue:" + field.getValue());
       }
-      jsonmap.put("Ambience", tempmap);
+      jsonmap.put(name, tempmap);
     }else if (stringval.contains(name)){
 
       strmap.put(name, val);
@@ -221,7 +221,7 @@ public class Business{
         Map<String,Boolean> temp2 = other.jsonmap.get(att);
         int larger = 0;
         double count = 0;
-        double size = temp1.size();
+        //double size = temp1.size();
         if (temp2.size() > temp1.size()){
           larger = 2;
         }else{
