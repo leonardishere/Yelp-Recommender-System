@@ -1,9 +1,11 @@
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
 
 public class User {
-  private String id;
-  private Map<String, Integer> map = new HashMap();
+  public String id;
+  public Map<String, Integer> map = new HashMap<>();
 
   public User(String userid){
     this.id = userid;
@@ -26,8 +28,27 @@ public class User {
     }
     
     //return individual rating for a business
-  public int GetRating(String businessID){
-    return ratingmap.get(businessID);
+  public int getRating(String businessID){
+    return map.get(businessID);
   }
-
+  
+  public int numRatings() {
+	  return map.size();
+  }
+  
+  public UserBusinessInteraction[] getInteractions() {
+		UserBusinessInteraction[] interactions = new UserBusinessInteraction[map.size()];
+		Set<Entry<String, Integer> > ratingsSet = map.entrySet();
+		@SuppressWarnings("rawtypes")
+		Entry[] entries = new Entry[ratingsSet.size()];
+		ratingsSet.toArray(entries);
+		for(int i = 0; i < map.size(); ++i) {
+			interactions[i] = new UserBusinessInteraction(id, (String)entries[i].getKey(), (int)entries[i].getValue());
+		}
+		return interactions;
+  }
+	  
+	  public boolean equals(User other) {
+		  return id == other.id;
+	  }
 }

@@ -1,5 +1,3 @@
-package yelp_recommender_system;
-
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;

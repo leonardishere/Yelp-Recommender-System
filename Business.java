@@ -1,5 +1,3 @@
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -9,35 +7,39 @@ import java.io.IOException;
 
 
 public class Business{
-  private String id;
-  private String name;
-  private String neighborhood;
-  private String address;
-  private String city;
-  private String state;
-  private String postal_code;
-  private float latitude;
-  private float longitude;
-  private float stars;
-  private int review_count;
-  private boolean is_open;
-  private ArrayList<String> category;
-  private ArrayList<String> attributes;
+	public static final int NUM_FEATURES = 41;
+	
+  public String id;
+  public String name;
+  public String neighborhood;
+  public String address;
+  public String city;
+  public String state;
+  public String postal_code;
+  public double latitude;
+  public double longitude;
+  public double stars;
+  public int review_count;
+  public boolean is_open;
+  public ArrayList<String> category;
+  public ArrayList<String> attributes;
 
-  private Map<String, Map<String, Boolean>> jsonmap = new HashMap<>(); //can't be right
-  private Map<String, String> strmap = new HashMap<>();
-  private Map<String, Integer> intmap = new HashMap<>();
-  private Map<String, Boolean> boolmap = new HashMap<>();
+  public Map<String, Map<String, Boolean>> jsonmap = new HashMap<>();
+  public Map<String, String> strmap = new HashMap<>();
+  public Map<String, Integer> intmap = new HashMap<>();
+  public Map<String, Boolean> boolmap = new HashMap<>();
 
-  private ArrayList<String> jsonval = new ArrayList<String>();
+  public ArrayList<String> jsonval = new ArrayList<String>();
 
-  private ArrayList<String> stringval = new ArrayList<String>();
+  public ArrayList<String> stringval = new ArrayList<String>();
 
-  private ArrayList<String> boolval = new ArrayList<String>();
+  public ArrayList<String> boolval = new ArrayList<String>();
 
-  private ArrayList<String> numericval = new ArrayList<String>();
+  public ArrayList<String> numericval = new ArrayList<String>();
 
-  public Business(String id, String name, String neighborhood, String address, String city, String state, String postal_code, float latitude, float longitude, float stars, int review_count, boolean is_open, ArrayList<String> category){
+  private static TermFrequencyAnalyzer termFrequencyAnalyzer = null;
+  
+  public Business(String id, String name, String neighborhood, String address, String city, String state, String postal_code, double latitude, double longitude, double stars, int review_count, boolean is_open){
     this.id = id;
     this.name = name;
     this.neighborhood = neighborhood;
@@ -50,7 +52,7 @@ public class Business{
     this.stars = stars;
     this.review_count = review_count;
     this.is_open = is_open;
-    this.category = (ArrayList<String>) category.clone();
+    this.category = new ArrayList<>();
 
     jsonval.add("Ambience");
     jsonval.add("BestNights"); //name, boolean
@@ -95,13 +97,16 @@ public class Business{
 
     numericval.add("RestaurantsPriceRange2"); //multiint
 
+    if(termFrequencyAnalyzer == null) {
+    	termFrequencyAnalyzer = new TermFrequencyAnalyzer();
+    	termFrequencyAnalyzer.initializeDB();
+    }
   }
 
-
-
-
-  public void AddAttributes(String name, String val){
-    if(jsonval.contains(name)){
+  public void addAttribute(String name, String val){
+    if(name.equalsIgnoreCase("category")) {
+    	category.add(val);
+    }else if(jsonval.contains(name)){
       JsonFactory factory = new JsonFactory();
 
       ObjectMapper mapper = new ObjectMapper(factory);
@@ -157,10 +162,11 @@ public class Business{
     }
 
   }
+  
   public double[] similarity(Business other){
     int counter = 0;
     //similarity matrix
-    double[] mysimilarity = new double[39];
+    double[] mysimilarity = new double[NUM_FEATURES];
     //iterate through all attributes, check if both have or both don't have
     for(String att:attributes){
 
@@ -268,12 +274,16 @@ public class Business{
 
       counter++;
 
-
-
-
     }
+    
+    mysimilarity[39] = Helper.jaccardSimilarity(category, other.category);			//category
+    mysimilarity[40] = termFrequencyAnalyzer.getKeyTermsFromDB(this.id, other.id); 	//postagger
 
     return mysimilarity;
   }
-
+  
+  public boolean equals(Business other) {
+	  return id == other.id;
+  }
+  
 }

@@ -1,10 +1,9 @@
-package yelp_recommender_system;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 
 /**
  * This class provides a high level interface to interacting with the database.
@@ -17,11 +16,12 @@ public class DatabaseReader {
 	public static final String PASSWORD = "root";
 	
 	/**
-	 * Loads the users from database into a KeyMap.
-	 * @return the user map
+	 * Loads the users from database into memory.
+	 * @return the user
 	 */
-	public static KeyMap loadUsers() {
-		KeyMap userMap = new KeyMap();
+	public static User[] loadUsers() {
+		//KeyMap userMap = new KeyMap();
+		ArrayList<User> users = new ArrayList<>();
 		Connection conn = null;
 		try{
 			Class.forName("com.mysql.cj.jdbc.Driver");
@@ -30,8 +30,9 @@ public class DatabaseReader {
 			String query = "select distinct id from user order by id asc";
 			ResultSet rs = stmt.executeQuery(query);
 			while(rs.next()) {
-				String id = rs.getString(1);
-				userMap.add(id);
+				//String id = rs.getString(1);
+				//userMap.add(id);
+				users.add(new User(rs.getString(1)));
 			}
 		} catch(Exception e){
 			e.printStackTrace();
@@ -42,25 +43,29 @@ public class DatabaseReader {
 				e.printStackTrace();
 			}
 		}
-		return userMap;
+		User[] users2 = new User[users.size()];
+		users.toArray(users2);
+		return users2;
 	}
 	
 	/**
-	 * Loads the users from database into a KeyMap.
-	 * @return the business map
+	 * Loads the users from database into memory.
+	 * @return the business 
 	 */
-	public static KeyMap loadBusinesses() {
-		KeyMap businessMap = new KeyMap();
+	public static Business[] loadBusinesses() {
+		//KeyMap businessMap = new KeyMap();
+		ArrayList<Business> businesses = new ArrayList<>();
 		Connection conn = null;
 		try{
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
 			Statement stmt = conn.createStatement();
-			String query = "select distinct id from business order by id asc";
+			String query = "select id, name, neighborhood, address, city, state, postal_code, latitude, longitude, stars, review_count, is_open from business order by id asc";
 			ResultSet rs = stmt.executeQuery(query);
 			while(rs.next()) {
-				String id = rs.getString(1);
-				businessMap.add(id);
+				//String id = rs.getString(1);
+				//businessMap.add(id);
+				businesses.add(new Business(rs.getString(1), rs.getString(2), rs.getString(3), rs.getString(4), rs.getString(5), rs.getString(6), rs.getString(7), rs.getDouble(8), rs.getDouble(9), rs.getDouble(10), rs.getInt(11), rs.getBoolean(12)));
 			}
 		} catch(Exception e){
 			e.printStackTrace();
@@ -71,11 +76,62 @@ public class DatabaseReader {
 				e.printStackTrace();
 			}
 		}
-		return businessMap;
+		Business[] businesses2 = new Business[businesses.size()];
+		businesses.toArray(businesses2);
+		return businesses2;
+	}
+	
+	public static ArrayList<UserBusinessInteraction> loadTrainingData(){
+		ArrayList<UserBusinessInteraction> interactions = new ArrayList<>();
+		Connection conn = null;
+		try{
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+			Statement stmt = conn.createStatement();
+			String query = "select user_id, business_id, stars from review where date < datetime('2017-01-27')"; //check date
+			ResultSet rs = stmt.executeQuery(query);
+			while(rs.next()) {
+				interactions.add(new UserBusinessInteraction(rs.getString(1), rs.getString(2), rs.getInt(3)));
+			}
+		} catch(Exception e){
+			e.printStackTrace();
+		} finally {
+			try {
+				if(conn != null) conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return interactions;
+	}
+	
+	public static ArrayList<UserBusinessInteraction> loadTestingData(){
+		ArrayList<UserBusinessInteraction> interactions = new ArrayList<>();
+		Connection conn = null;
+		try{
+			Class.forName("com.mysql.cj.jdbc.Driver");
+			conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
+			Statement stmt = conn.createStatement();
+			String query = "select user_id, business_id, stars from review where date >= datetime('2017-01-27')"; //check date
+			ResultSet rs = stmt.executeQuery(query);
+			while(rs.next()) {
+				interactions.add(new UserBusinessInteraction(rs.getString(1), rs.getString(2), rs.getInt(3)));
+			}
+		} catch(Exception e){
+			e.printStackTrace();
+		} finally {
+			try {
+				if(conn != null) conn.close();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return interactions;
 	}
 	
 	/**
 	 * Loads the reviews from database into the actual rating matrix.
+	 * This matrix would be multiple terrabytes and thus is not the way to go.
 	 * @param userMap the map of userIDs to indices
 	 * @param businessMap the map of businessIDs to indices
 	 * @return the actual rating matrix

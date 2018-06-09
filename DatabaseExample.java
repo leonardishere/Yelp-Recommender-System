@@ -1,5 +1,3 @@
-package yelp_recommender_system;
-
 import java.sql.*; 
 
 //note: installation of an external database driver is required.

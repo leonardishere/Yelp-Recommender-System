@@ -1,4 +1,6 @@
-package yelp_recommender_system;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Random;
 
 /**
  * Helper provides some static helper methods that have no home elsewhere.
@@ -122,6 +124,46 @@ public class Helper {
 	}
 	
 	/**
+	 * Calculates the element wise addition of two vectors, v1+v2.
+	 * @param v1 the first vector
+	 * @param v2 the second vector
+	 * @return v1+v2
+	 */
+	public static double[] vvAdd(double[] v1, double[] v2) {
+		int length = v1.length;
+		if(v2.length != length) {
+			System.err.println("Error: input vectors must be the same length.");
+			return null;
+		}
+		
+		double[] v3 = new double[length];
+		for(int i = 0; i < length; ++i) {
+			v3[i] = v1[i] + v2[i];
+		}
+		return v3;
+	}
+	
+	/**
+	 * Calculates the element wise multiplication of two vectors, v1*v2.
+	 * @param v1 the first vector
+	 * @param v2 the second vector
+	 * @return v1*v2
+	 */
+	public static double[] vvMul(double[] v1, double[] v2) {
+		int length = v1.length;
+		if(v2.length != length) {
+			System.err.println("Error: input vectors must be the same length.");
+			return null;
+		}
+		
+		double[] v3 = new double[length];
+		for(int i = 0; i < length; ++i) {
+			v3[i] = v1[i] * v2[i];
+		}
+		return v3;
+	}
+	
+	/**
 	 * Calculates the element wise multiplation of a scalor and a vector.
 	 * @param v
 	 * @param s
@@ -134,7 +176,61 @@ public class Helper {
 		}
 		return res;
 	}
+	
+	/**
+	 * Calculates the element wise multiplication of a vector and a matrix.
+	 * The vector is of size s1 and the matrix of size s1*s2. Every item in row r will be multiplied by the value at the correspond row in v when v is represented as a column vector.
+	 * @param v
+	 * @param m
+	 * @return
+	 */
+	public static double[][] vmMul(double[] v, double[][] m){
+		double[][] res = new double[m.length][m[0].length];
+		for(int row = 0; row < m.length; ++row) {
+			for(int col = 0; col < m[row].length; ++col) {
+				res[row][col] = v[row] * m[row][col];
+			}
+		}
+		return res;
+	}
 
+	/**
+	 * Calculates the element wise multiplication of a scalor and a matrix.
+	 * @param s
+	 * @param m
+	 * @return
+	 */
+	public static double[][] smMul(double s, double[][] m){
+		double[][] res = new double[m.length][m[0].length];
+		for(int row = 0; row < m.length; ++row) {
+			for(int col = 0; col < m[row].length; ++col) {
+				res[row][col] = s * m[row][col];
+			}
+		}
+		return res;
+	}
+	
+	/**
+	 * Adds the two matrices element by element.
+	 * @param m1 the first matrix
+	 * @param m2 the second matrix
+	 * @return the sum of the matrices
+	 */
+	public static double[][] mmAdd(double[][] m1, double[][] m2){
+		if(m1 == null || m2 == null) return null;
+		if(m1.length != m2.length || m1[0].length != m2[0].length) {
+			System.err.println("Error: the matrix arguments to Helper.elementalMMmul must be equal size.");
+			return null;
+		}
+		double[][] res = new double[m1.length][m1[0].length];
+		for(int row = 0; row < m1.length; ++row) {
+			for(int col = 0; col < m1[0].length; ++col) {
+				res[row][col] = m1[row][col] + m2[row][col];
+			}
+		}
+		return res;
+	}
+	
 	/**
 	 * Returns the one hot encoding of
 	 * @param length
@@ -145,5 +241,125 @@ public class Helper {
 		double[] arr = zeros(length);
 		arr[hot] = 1.0;
 		return arr;
+	}
+
+	public static int unionSize(ArrayList<String> arr1, ArrayList<String> arr2){
+		HashSet<String> set = new HashSet<>();
+		set.addAll(arr1);
+		set.addAll(arr2);
+		return set.size();
+	}
+	
+	public static int junctionSize(ArrayList<String> arr1, ArrayList<String> arr2) {
+		HashSet<String> set = new HashSet<>();
+		for(String str1 : arr1) {
+			if(arr2.contains(str1)) {
+				set.add(str1);
+			}
+		}
+		return set.size();
+	}
+	
+	public static double jaccardSimilarity(ArrayList<String> arr1, ArrayList<String> arr2) {
+		return junctionSize(arr1, arr2)*1.0/unionSize(arr1, arr2);
+	}
+
+	/**
+	 * Creates a new matrix populated with random values.
+	 * @param numRows the number of rows of the matrix
+	 * @param numCols the number of cols of the matrix
+	 * @param min the minimal random value
+	 * @param max the maximal random value
+	 * @return the randomized matrix
+	 */
+	public static double[][] rand(int numRows, int numCols, double min, double max){
+		double diff = max-min;
+		Random rand = new Random();
+		double[][] res = new double[numRows][numCols];
+		for(int row = 0; row < numRows; ++row) {
+			for(int col = 0; col < numCols; ++col) {
+				res[row][col] = rand.nextDouble()*diff - min;
+			}
+		}
+		return res;
+	}
+	
+	/**
+	 * Creates a new array populated with random values.
+	 * @param numRows the number of elements of the array
+	 * @param min the minimal random value
+	 * @param max the maximal random value
+	 * @return the randomized array
+	 */
+	public static double[] rand(int numRows, double min, double max){
+		double diff = max-min;
+		Random rand = new Random();
+		double[] res = new double[numRows];
+		for(int row = 0; row < numRows; ++row) {
+			res[row] = rand.nextDouble()*diff - min;
+		}
+		return res;
+	}
+	
+	/**
+	 * Multiplies the two matrices element by element.
+	 * @param m1 the first matrix
+	 * @param m2 the second matrix
+	 * @return the product of the matrices
+	 */
+	public static double[][] elementalMMmul(double[][] m1, double[][] m2){
+		if(m1 == null || m2 == null) return null;
+		if(m1.length != m2.length || m1[0].length != m2[0].length) {
+			System.err.println("Error: the matrix arguments to Helper.elementalMMmul must be equal size.");
+			return null;
+		}
+		double[][] res = new double[m1.length][m1[0].length];
+		for(int row = 0; row < m1.length; ++row) {
+			for(int col = 0; col < m1[0].length; ++col) {
+				res[row][col] = m1[row][col] * m2[row][col];
+			}
+		}
+		return res;
+	}
+	
+	/**
+	 * Sums up each row of a matrix into an array.
+	 * @param m the matrix to sum
+	 * @return the row-wise sum
+	 */
+	public static double[] rowSum(double[][] m) {
+		double[] res = new double[m.length];
+		for(int row = 0; row < m.length; ++row) {
+			res[row] = 0;
+			for(int col = 0; col < m[row].length; ++col) {
+				res[row] += m[row][col];
+			}
+		}
+		return res;
+	}
+	
+	/**
+	 * All negatives become zero.
+	 * @param v
+	 * @return
+	 */
+	public static double[] removeNegatives(double[] v) {
+		double[] res = new double[v.length];
+		for(int i = 0; i < v.length; ++i) {
+			res[i] = v[i] > 0 ? v[i] : 0;
+		}
+		return res;
+	}
+
+	/**
+	 * Adds the row to the row in the matrix. Does this in-place.
+	 * @param m
+	 * @param row
+	 * @param rowNum
+	 */
+	public static void inplaceAddRow(double[][] m, double[] row, int rowNum) {
+		for(int i = 0; i < row.length; ++i) {
+			m[rowNum][i] += row[i];
+		}
 	}
 }

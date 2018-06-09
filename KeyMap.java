@@ -1,5 +1,3 @@
-package yelp_recommender_system;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 

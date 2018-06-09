@@ -1,5 +1,3 @@
-package yelp_recommender_system;
-
 import edu.stanford.nlp.tagger.maxent.MaxentTagger;
 
 import java.util.HashMap;
