@@ -219,6 +219,12 @@ public class Business{
       if (jsonval.contains(att)){
         Map<String,Boolean> temp1 = this.jsonmap.get(att);
         Map<String,Boolean> temp2 = other.jsonmap.get(att);
+	      
+	if ((temp1 == null) && (temp2 == null){
+		mysimilarity[counter] = 0;
+	} else if ((temp1 == null) || (temp2 == null){
+		mysimilarity[counter] = 1;
+	}else{
         int larger = 0;
         double count = 0;
         //double size = temp1.size();
@@ -264,6 +270,7 @@ public class Business{
         }
 
         mysimilarity[counter] = count/mysize;
+	}
 
       }
 
