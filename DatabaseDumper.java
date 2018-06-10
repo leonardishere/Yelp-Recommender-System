@@ -35,8 +35,8 @@ public class DatabaseDumper {
 					"  `value` mediumtext,\r\n" + 
 					"  PRIMARY KEY (`id`)\r\n" + 
 					");\n");
-			
-			
+
+
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
 			Statement stmt = conn.createStatement();
@@ -63,7 +63,7 @@ public class DatabaseDumper {
 		}
 		System.out.println("End attribute table dump");
 	}
-	
+
 	/**
 	 * Reads the entire business table from MySql then dumps it to Sqlite3 format.
 	 */
@@ -90,7 +90,7 @@ public class DatabaseDumper {
 					"  `is_open` tinyint(1) DEFAULT NULL,\r\n" + 
 					"  PRIMARY KEY (`id`)\r\n" + 
 					");\n");
-			
+
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
 			Statement stmt = conn.createStatement();
@@ -137,7 +137,7 @@ public class DatabaseDumper {
 					"  `category` varchar(255) DEFAULT NULL,\r\n" + 
 					"  PRIMARY KEY (`id`)\r\n" + 
 					");\n");
-			
+
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
 			Statement stmt = conn.createStatement();
@@ -183,7 +183,7 @@ public class DatabaseDumper {
 					"  `count` int(11) DEFAULT NULL,\r\n" + 
 					"  PRIMARY KEY (`id`)\r\n" + 
 					");\n");
-			
+
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
 			Statement stmt = conn.createStatement();
@@ -228,7 +228,7 @@ public class DatabaseDumper {
 					"  `year` char(4) NOT NULL,\r\n" + 
 					"  PRIMARY KEY (`id`)\r\n" + 
 					");\n");
-			
+
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
 			Statement stmt = conn.createStatement();
@@ -274,7 +274,7 @@ public class DatabaseDumper {
 					"  `friend_id` varchar(22) NOT NULL,\r\n" + 
 					"  PRIMARY KEY (`id`)\r\n" + 
 					");\n");
-			
+
 			for(int i = 0; i < 25000000; i += 1000000){
 				Class.forName("com.mysql.cj.jdbc.Driver");
 				conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
@@ -288,7 +288,7 @@ public class DatabaseDumper {
 				conn.close();
 				System.out.printf("%10d friends\n", i);
 			}
-			
+
 			String filepath2 = "sql/friend_2.sql";
 			out2 = new BufferedWriter(new FileWriter(filepath2));
 			for(int i = 25000000; i < 49626957; i += 1000000){
@@ -340,7 +340,7 @@ public class DatabaseDumper {
 					"  `hours` varchar(255) DEFAULT NULL,\r\n" + 
 					"  PRIMARY KEY (`id`)\r\n" + 
 					") ;\n");
-			
+
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
 			Statement stmt = conn.createStatement();
@@ -386,7 +386,7 @@ public class DatabaseDumper {
 					"  `label` varchar(255) DEFAULT NULL,\r\n" + 
 					"  PRIMARY KEY (`id`)\r\n" + 
 					");\n");
-			
+
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
 			Statement stmt = conn.createStatement();
@@ -440,7 +440,7 @@ public class DatabaseDumper {
 					"  `cool` int(11) DEFAULT NULL,\r\n" + 
 					"  PRIMARY KEY (`id`)\r\n" + 
 					") ;\n");
-			*/
+			 */
 			int j = 0;
 			/*
 			for(int i = 0; i < 3000000; i += 1000000){
@@ -457,8 +457,8 @@ public class DatabaseDumper {
 				conn.close();
 				System.out.printf("%10d reviews\n", i);
 			}
-			*/
-			
+			 */
+
 			//String filepath2 = "sql/review_2.sql";
 			String filepath2 = "sql/review_8.sql";
 			out2 = new BufferedWriter(new FileWriter(filepath2));
@@ -495,7 +495,7 @@ public class DatabaseDumper {
 		}
 		System.out.println("End review table dump");
 	}
-	
+
 	/**
 	 * Reads the entire review table from MySql then dumps it to Sqlite3 format.
 	 */
@@ -524,7 +524,7 @@ public class DatabaseDumper {
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
 			for(int i = 0; i < 2500000; i += 100){
-			//for(int i = 0; i < 500; i += 100){
+				//for(int i = 0; i < 500; i += 100){
 				Statement stmt = conn.createStatement();
 				String query = "select id, business_id, user_id, stars, date, text, useful, funny, cool from review limit " + i + ", 100";
 				ResultSet rs = stmt.executeQuery(query);
@@ -546,7 +546,7 @@ public class DatabaseDumper {
 			}
 			conn.close();
 
-			
+
 			String filepath2 = "sql/review_4.sql";
 			out2 = new BufferedWriter(new FileWriter(filepath2));
 			Class.forName("com.mysql.cj.jdbc.Driver");
@@ -575,7 +575,7 @@ public class DatabaseDumper {
 			}
 			conn.close();
 			out2.write("select \"finished inserting into review. number of rows: \" || count(*) from review;\n");
-			
+
 		} catch(Exception e){
 			e.printStackTrace();
 		} finally {
@@ -593,7 +593,7 @@ public class DatabaseDumper {
 		}
 		System.out.println("End review table dump");
 	}
-	
+
 	/**
 	 * Reads the entire review table from MySql then dumps it to Sqlite3 format.
 	 */
@@ -623,7 +623,7 @@ public class DatabaseDumper {
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
 			for(int i = 0; i < 2500000; i += 100000){
-			//for(int i = 0; i < 500; i += 100000){
+				//for(int i = 0; i < 500; i += 100000){
 				Statement stmt = conn.createStatement();
 				String query = "select id, business_id, user_id, stars, date, text, useful, funny, cool from review limit " + i + ", 100000";
 				//String query = "select id, business_id, user_id, stars, date, text, useful, funny, cool from review limit " + i + ", 500";
@@ -651,8 +651,8 @@ public class DatabaseDumper {
 				System.out.printf("%10d reviews\n", i+100000);
 			}
 			conn.close();
-			
-			
+
+
 			String filepath2 = "sql/review_6.sql";
 			out2 = new BufferedWriter(new FileWriter(filepath2));
 			Class.forName("com.mysql.cj.jdbc.Driver");
@@ -685,7 +685,7 @@ public class DatabaseDumper {
 			out2.write(";\n");
 			conn.close();
 			out2.write("select \"finished inserting into review. number of rows: \" || count(*) from review;\n");
-			
+
 		} catch(Exception e){
 			e.printStackTrace();
 		} finally {
@@ -703,7 +703,7 @@ public class DatabaseDumper {
 		}
 		System.out.println("End review table dump");
 	}
-	
+
 	/**
 	 * Reads the entire tip table from MySql then dumps it to Sqlite3 format.
 	 */
@@ -724,7 +724,7 @@ public class DatabaseDumper {
 					"  `likes` int(11) DEFAULT NULL,\r\n" + 
 					"  PRIMARY KEY (`id`)\r\n" + 
 					");\n");
-			
+
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
 			Statement stmt = conn.createStatement();
@@ -786,7 +786,7 @@ public class DatabaseDumper {
 					"  `compliment_photos` int(11) DEFAULT NULL,\r\n" + 
 					"  PRIMARY KEY (`id`)\r\n" + 
 					");\n");
-			
+
 			Class.forName("com.mysql.cj.jdbc.Driver");
 			conn = DriverManager.getConnection(URL, USERNAME, PASSWORD);
 			Statement stmt = conn.createStatement();
@@ -833,14 +833,14 @@ public class DatabaseDumper {
 		dump_tip();
 		dump_user();
 	}
-	
+
 	public static void stringReplaceTest() {
 		System.out.println("test \" string".replaceAll("\"", "\"\""));
 		String str2 = "multi\nline\nstring";
 		System.out.println(str2);
 		System.out.println(str2.replaceAll("\n", " "));
 	}
-	
+
 	/**
 	 * Main method.
 	 * @param args ignored

@@ -20,7 +20,7 @@ public class KeyMap {
 	private HashMap<String, Integer> map;
 	//used to translate indices to keys
 	private ArrayList<String> list;
-	
+
 	/**
 	 * Constructs an empty KeyMap.
 	 */
@@ -28,7 +28,7 @@ public class KeyMap {
 		map = new HashMap<>();
 		list = new ArrayList<>();
 	}
-	
+
 	/**
 	 * Returns true if the key is contained in this map.
 	 * @param key the key to check
@@ -37,7 +37,7 @@ public class KeyMap {
 	public boolean contains(String key) {
 		return map.containsKey(key);
 	}
-	
+
 	/**
 	 * Returns true if the index is contained in this map.
 	 * @param index the index to check
@@ -46,7 +46,7 @@ public class KeyMap {
 	public boolean contains(int index) {
 		return 0 <= index && index < list.size();
 	}
-	
+
 	/**
 	 * Converts the key to its associated index.
 	 * Returns -1 if the key is not contained.
@@ -57,7 +57,7 @@ public class KeyMap {
 		if(contains(key)) return map.get(key);
 		return -1;
 	}
-	
+
 	/**
 	 * Converts the index to its associated key.
 	 * Returns the empty string "" if the index is not contained.
@@ -68,7 +68,7 @@ public class KeyMap {
 		if(contains(index)) return list.get(index);
 		return "";
 	}
-	
+
 	/**
 	 * Adds the key into this map and returns its index.
 	 * Returns -1 if the key is already contained.
@@ -82,7 +82,7 @@ public class KeyMap {
 		list.add(key);
 		return index;
 	}
-	
+
 	/**
 	 * Returns the number of keys currently being stored.
 	 * @return the number of keys
@@ -90,7 +90,7 @@ public class KeyMap {
 	public int size() {
 		return list.size();
 	}
-	
+
 	/*
 	//test
 	public static void main(String[] args) {
@@ -110,5 +110,5 @@ public class KeyMap {
 		System.out.println("_"+map.convert(2));
 		System.out.println("_"+map.convert(3));
 	}
-	*/
+	 */
 }

@@ -1,12 +1,12 @@
 import java.io.Serializable;
 
 public class Model implements Serializable{
-	
+
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -29680847074887330L;
-	
+
 	public static final int NUM_STARS = 5, NUM_FEATURES = 41;
 	public static final double[] MULTIPLIERS = new double[] {1,2,3,4,5};
 	public double[][] weights = null;
@@ -15,13 +15,13 @@ public class Model implements Serializable{
 	public double[] v2 = null, v3 = null, v4 = null, v7 = null, v8 = null;
 	public double s5 = 0, s6 = 0, s9 = 0;
 	public int iters = 0;
-	
+
 
 	public Model() {
 		weights = Helper.rand(NUM_STARS, NUM_FEATURES, 0.0, 0.1);
 		biases = Helper.rand(NUM_STARS, 0.0, 0.1);
 	}
-	
+
 	public void feedforward(double[][] input) {
 		m0 = input;										//assembled layer: store input
 		m1 = Helper.elementalMMmul(input, weights); 	//summing layer: multiply assembled layer * weights 
@@ -34,7 +34,7 @@ public class Model implements Serializable{
 		v8 = Helper.vvMul(v7, MULTIPLIERS);				//output layer: multiply multiplier * confidence
 		s9 = Helper.sum(v8);							//output layer: sum
 	}
-	
+
 	public void backpropagate(double[] target, double eta) {
 		double[] e1 = Helper.vvSub(target, v7);			//output layer: find error
 		double[] e2 = Helper.svMul(s5, e1);				//normalization layer: scale error
@@ -45,15 +45,15 @@ public class Model implements Serializable{
 		weights = Helper.mmAdd(weights, e4);			//summing layer: adjust weights
 		biases = Helper.vvAdd(biases, e3);				//summing layer: adjust biases
 	}
-	
+
 	public double[] classOutput() {
 		return v7;
 	}
-	
+
 	public double numericalOutput() {
 		return s9;
 	}
-	
+
 	public void sgd(double[][] input, int target, double eta) {
 		feedforward(input);
 		backpropagate(Helper.onehot(NUM_STARS, target), eta);

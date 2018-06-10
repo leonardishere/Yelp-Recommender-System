@@ -16,15 +16,23 @@ public class DatabaseReader {
 	public static final String USERNAME = "root";
 	public static final String PASSWORD = "root";
 
-	public static final String SQLITE_URL = "jdbc:sqlite:C:/sqlite/db/yelp.db";
-	
-	public static final int NUM_USERS = 		1326101;
-	public static final int NUM_BUSINESSES = 	 174567;
-	public static final int NUM_ATTRIBUTES =	1310575;
-	public static final int NUM_CATEGORIES = 	 667527;
-	public static final int NUM_TRAINING_DATA = 4208386;
-	public static final int NUM_TESTING_DATA = 	1053283;
-	
+	public static final String SQLITE_URL = "jdbc:sqlite:/local/weka/yelp.db";
+	public static final String SQLITE_RESTAURANT_URL = "jdbc:sqlite:/local/weka/yelp_restaurants.db";
+
+	public static final int NUM_USERS = 					1326101;
+	public static final int NUM_BUSINESSES = 				 174567;
+	public static final int NUM_ATTRIBUTES =				1310575;
+	public static final int NUM_CATEGORIES = 				 667527;
+	public static final int NUM_TRAINING_DATA = 			4208386;
+	public static final int NUM_TESTING_DATA = 				1053283;
+
+	public static final int NUM_USERS_RESTAURANTS = 		 908921;
+	public static final int NUM_RESTAURANTS = 	 			  54618;
+	public static final int NUM_RESTAURANT_ATTRIBUTES = 	 904202;
+	public static final int NUM_RESTAURANT_CATEGORIES = 	 210956;
+	public static final int NUM_TRAINING_RESTAURANTS = 		2597861;
+	public static final int NUM_TESTING_RESTAURANTS = 		 623558;
+
 	/**
 	 * Creates a connection to the mysql database.
 	 * @return
@@ -39,28 +47,30 @@ public class DatabaseReader {
 		}
 		return conn;
 	}
-	
+
 	/**
 	 * Creates a connection to the sqlite database.
 	 * @return
 	 */
-	public static Connection connect_sqlite() {
+	public static Connection connect_sqlite(boolean restaurantsOnly) {
 		Connection conn = null;
 		try{
-		    conn = DriverManager.getConnection(SQLITE_URL);
+			conn = restaurantsOnly
+					? DriverManager.getConnection(SQLITE_RESTAURANT_URL)
+					: DriverManager.getConnection(SQLITE_URL);
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
 		return conn;
 	}
-	
+
 	/**
 	 * Loads the users from database into memory.
 	 * @return the user
 	 */
-	public static User[] loadUsers(Connection conn) {
-		ArrayList<User> users = new ArrayList<>(NUM_USERS);
-		
+	public static User[] loadUsers(Connection conn, boolean restaurantsOnly) {
+		ArrayList<User> users = new ArrayList<>(restaurantsOnly ? NUM_USERS_RESTAURANTS : NUM_USERS);
+
 		Statement stmt;
 		try {
 			stmt = conn.createStatement();
@@ -73,18 +83,18 @@ public class DatabaseReader {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
-		
+
 		User[] users2 = new User[users.size()];
 		users.toArray(users2);
 		return users2;
 	}
-	
+
 	/**
 	 * Loads the users from database into memory.
 	 * @return the business 
 	 */
-	public static Business[] loadBusinesses(Connection conn) {
-		ArrayList<Business> businesses = new ArrayList<>(NUM_BUSINESSES);
+	public static Business[] loadBusinesses(Connection conn, boolean restaurantsOnly) {
+		ArrayList<Business> businesses = new ArrayList<>(restaurantsOnly ? NUM_RESTAURANTS : NUM_BUSINESSES);
 		try{
 			Statement stmt = conn.createStatement();
 			String query = "select id, name, neighborhood, address, city, state, postal_code, latitude, longitude, stars, review_count, is_open from business order by id asc";
@@ -96,14 +106,14 @@ public class DatabaseReader {
 		} catch(Exception e){
 			e.printStackTrace();
 		} 
-		
+
 		Business[] businesses2 = new Business[businesses.size()];
 		businesses.toArray(businesses2);
 		return businesses2;
 	}
-	
-	public static ArrayList<BusinessAttribute> loadAttributes(Connection conn){
-		ArrayList<BusinessAttribute> attributes = new ArrayList<>(NUM_ATTRIBUTES);
+
+	public static ArrayList<BusinessAttribute> loadAttributes(Connection conn, boolean restaurantsOnly){
+		ArrayList<BusinessAttribute> attributes = new ArrayList<>(restaurantsOnly ? NUM_RESTAURANT_ATTRIBUTES : NUM_ATTRIBUTES);
 		try{
 			Statement stmt = conn.createStatement();
 			String query = "select business_id, name, value from attribute";
@@ -117,9 +127,9 @@ public class DatabaseReader {
 		}
 		return attributes;
 	}
-	
-	public static ArrayList<BusinessAttribute> loadCategories(Connection conn){
-		ArrayList<BusinessAttribute> categories = new ArrayList<>(NUM_CATEGORIES);
+
+	public static ArrayList<BusinessAttribute> loadCategories(Connection conn, boolean restaurantsOnly){
+		ArrayList<BusinessAttribute> categories = new ArrayList<>(restaurantsOnly ? NUM_RESTAURANT_CATEGORIES : NUM_CATEGORIES);
 		try{
 			Statement stmt = conn.createStatement();
 			String query = "select business_id, category from category";
@@ -133,16 +143,16 @@ public class DatabaseReader {
 		}
 		return categories;
 	}
-	
-	public static ArrayList<UserBusinessInteraction> loadTrainingData(Connection conn, boolean useSqlite){
-		ArrayList<UserBusinessInteraction> interactions = new ArrayList<>(NUM_TESTING_DATA);
+
+	public static ArrayList<UserBusinessInteraction> loadTrainingData(Connection conn, boolean useSqlite, boolean restaurantsOnly){
+		ArrayList<UserBusinessInteraction> interactions = new ArrayList<>(restaurantsOnly ? NUM_TRAINING_RESTAURANTS : NUM_TRAINING_DATA);
 		try{
 			int step = 1000000;
 			for(int i = 0; i < NUM_TESTING_DATA; i += step) {
 				Statement stmt = conn.createStatement();
 				String query = useSqlite 
 						? "select user_id, business_id, stars from review where date < datetime('2017-01-27') limit " + i + ", " + step 
-						: "select user_id, business_id, stars from review where date < '2017-01-27' limit " + i + ", " + step;
+								: "select user_id, business_id, stars from review where date < '2017-01-27' limit " + i + ", " + step;
 				ResultSet rs = stmt.executeQuery(query);
 				while(rs.next()) {
 					interactions.add(new UserBusinessInteraction(rs.getString(1), rs.getString(2), rs.getInt(3)));
@@ -154,9 +164,9 @@ public class DatabaseReader {
 		}
 		return interactions;
 	}
-	
-	public static ArrayList<UserBusinessInteraction> loadTestingData(Connection conn, boolean useSqlite){
-		ArrayList<UserBusinessInteraction> interactions = new ArrayList<>(NUM_TRAINING_DATA);
+
+	public static ArrayList<UserBusinessInteraction> loadTestingData(Connection conn, boolean useSqlite, boolean restaurantsOnly){
+		ArrayList<UserBusinessInteraction> interactions = new ArrayList<>(restaurantsOnly ? NUM_TESTING_RESTAURANTS : NUM_TESTING_DATA);
 		try{
 			Statement stmt = conn.createStatement();
 			String query = useSqlite ? "select user_id, business_id, stars from review where date >= datetime('2017-01-27')" : "select user_id, business_id, stars from review where date >= '2017-01-27'"; 
@@ -170,35 +180,70 @@ public class DatabaseReader {
 		}
 		return interactions;
 	}
+	
+	public static ArrayList<UserBusinessInteraction> loadReviewsForUser(Connection conn, String userID){
+		ArrayList<UserBusinessInteraction> interactions = new ArrayList<>();
+		try{
+			Statement stmt = conn.createStatement();
+			String query = "select business_id, stars from review where user_id=\""+userID+"\" order by date asc";
+			ResultSet rs = stmt.executeQuery(query);
+			while(rs.next()) {
+				interactions.add(new UserBusinessInteraction(userID, rs.getString(1), rs.getInt(2)));
+			}
+			rs.close();
+		} catch(Exception e){
+			e.printStackTrace();
+		}
+		return interactions;
+	}
 
 	public static String getLatestModel(Connection conn) {
 		try {
 			Statement stmt = conn.createStatement();
-	        String query = "select iters, filepath from model where iters in (select max(iters) from model);";
-	        ResultSet rs = stmt.executeQuery(query);
-	        if(rs.next()) {
-	        	return rs.getString(2);
-	        }
+			String query = "select iters, filepath from model where iters in (select max(iters) from model);";
+			ResultSet rs = stmt.executeQuery(query);
+			if(rs.next()) {
+				return rs.getString(2);
+			}
 			rs.close();
 		} catch(Exception e) {
 			e.printStackTrace();
 		}
 		return null;
 	}
-	
+
 	public static boolean saveModel(Connection conn, int numIters, String filepath) {
 		try {
-            conn.setAutoCommit(false);
-            String sqlStatement = "INSERT INTO model(iter, filepath) VALUES(?,?);";
-        	PreparedStatement preparedStatement = conn.prepareStatement(sqlStatement);
-            preparedStatement.setInt(1, numIters);
-            preparedStatement.setString(2, filepath);
-            preparedStatement.addBatch();
-            preparedStatement.executeBatch();            
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
+			//conn.setAutoCommit(false);
+			String sqlStatement = "INSERT INTO model(iters, filepath) VALUES(?,?);";
+			PreparedStatement preparedStatement = conn.prepareStatement(sqlStatement);
+			preparedStatement.setInt(1, numIters);
+			preparedStatement.setString(2, filepath);
+			//preparedStatement.addBatch();
+			//preparedStatement.executeBatch();            
+			preparedStatement.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		return true;
+	}
+
+	public static boolean saveModel(Connection conn, int numIters, String filepath, double rmse) {
+		try {
+			//conn.setAutoCommit(false);
+			String sqlStatement = "INSERT INTO model(iters, filepath, rmse) VALUES(?,?,?);";
+			PreparedStatement preparedStatement = conn.prepareStatement(sqlStatement);
+			preparedStatement.setInt(1, numIters);
+			preparedStatement.setString(2, filepath);
+			preparedStatement.setDouble(3, rmse);
+			//preparedStatement.addBatch();
+			//preparedStatement.executeBatch();            
+			preparedStatement.executeUpdate();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
 		return true;
 	}
 }

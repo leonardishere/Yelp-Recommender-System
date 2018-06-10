@@ -36,7 +36,7 @@ public class Helper {
 		}
 		return arr;
 	}
-	
+
 	/**
 	 * Creates a 2D matrix with all elements initialized to zero.
 	 * @param numRows the number of rows in the matrix (dimension 1)
@@ -52,7 +52,7 @@ public class Helper {
 		}
 		return matrix;
 	}
-	
+
 	/**
 	 * Creates a 3D matrix with all elements initialized to zero.
 	 * @param numPages the number of pages in the matrix (dimension 1)
@@ -71,7 +71,7 @@ public class Helper {
 		}
 		return matrix;
 	}
-	
+
 	/**
 	 * Converts the 2D matrix to CSV.
 	 * @param matrix the matrix to convert
@@ -89,7 +89,7 @@ public class Helper {
 		}
 		return builder.toString();
 	}
-	
+
 	/**
 	 * Sums the values in the array.
 	 * @param arr the values to sum
@@ -102,7 +102,7 @@ public class Helper {
 		}
 		return out;
 	}
-	
+
 	/**
 	 * Calculates the element wise subtraction difference of two vectors, v1-v2.
 	 * @param v1 the first vector
@@ -115,14 +115,14 @@ public class Helper {
 			System.err.println("Error: input vectors must be the same length.");
 			return null;
 		}
-		
+
 		double[] v3 = new double[length];
 		for(int i = 0; i < length; ++i) {
 			v3[i] = v1[i] - v2[i];
 		}
 		return v3;
 	}
-	
+
 	/**
 	 * Calculates the element wise addition of two vectors, v1+v2.
 	 * @param v1 the first vector
@@ -135,14 +135,14 @@ public class Helper {
 			System.err.println("Error: input vectors must be the same length.");
 			return null;
 		}
-		
+
 		double[] v3 = new double[length];
 		for(int i = 0; i < length; ++i) {
 			v3[i] = v1[i] + v2[i];
 		}
 		return v3;
 	}
-	
+
 	/**
 	 * Calculates the element wise multiplication of two vectors, v1*v2.
 	 * @param v1 the first vector
@@ -155,14 +155,14 @@ public class Helper {
 			System.err.println("Error: input vectors must be the same length.");
 			return null;
 		}
-		
+
 		double[] v3 = new double[length];
 		for(int i = 0; i < length; ++i) {
 			v3[i] = v1[i] * v2[i];
 		}
 		return v3;
 	}
-	
+
 	/**
 	 * Calculates the element wise multiplation of a scalor and a vector.
 	 * @param v
@@ -176,7 +176,7 @@ public class Helper {
 		}
 		return res;
 	}
-	
+
 	/**
 	 * Calculates the element wise multiplication of a vector and a matrix.
 	 * The vector is of size s1 and the matrix of size s1*s2. Every item in row r will be multiplied by the value at the correspond row in v when v is represented as a column vector.
@@ -209,7 +209,7 @@ public class Helper {
 		}
 		return res;
 	}
-	
+
 	/**
 	 * Adds the two matrices element by element.
 	 * @param m1 the first matrix
@@ -230,7 +230,7 @@ public class Helper {
 		}
 		return res;
 	}
-	
+
 	/**
 	 * Returns the one hot encoding of
 	 * @param length
@@ -249,7 +249,7 @@ public class Helper {
 		set.addAll(arr2);
 		return set.size();
 	}
-	
+
 	public static int junctionSize(ArrayList<String> arr1, ArrayList<String> arr2) {
 		HashSet<String> set = new HashSet<>();
 		for(String str1 : arr1) {
@@ -259,7 +259,7 @@ public class Helper {
 		}
 		return set.size();
 	}
-	
+
 	public static double jaccardSimilarity(ArrayList<String> arr1, ArrayList<String> arr2) {
 		return junctionSize(arr1, arr2)*1.0/unionSize(arr1, arr2);
 	}
@@ -283,7 +283,7 @@ public class Helper {
 		}
 		return res;
 	}
-	
+
 	/**
 	 * Creates a new array populated with random values.
 	 * @param numRows the number of elements of the array
@@ -300,7 +300,7 @@ public class Helper {
 		}
 		return res;
 	}
-	
+
 	/**
 	 * Multiplies the two matrices element by element.
 	 * @param m1 the first matrix
@@ -321,7 +321,7 @@ public class Helper {
 		}
 		return res;
 	}
-	
+
 	/**
 	 * Sums up each row of a matrix into an array.
 	 * @param m the matrix to sum
@@ -337,7 +337,7 @@ public class Helper {
 		}
 		return res;
 	}
-	
+
 	/**
 	 * All negatives become zero.
 	 * @param v
