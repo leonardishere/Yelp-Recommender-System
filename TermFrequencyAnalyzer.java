@@ -62,7 +62,7 @@ public class TermFrequencyAnalyzer {
 	//Portions of this code used  from here: http://www.sqlitetutorial.net/sqlite-java/select/
 	private void selectFromDB(String selectStatement, String table) {
 
-		System.out.println("Executing this statement: " + selectStatement);
+		//System.out.println("Executing this statement: " + selectStatement);
 
 		try (//Connection conn = this.connect();
 				Statement stmt = connection.createStatement();
@@ -70,29 +70,29 @@ public class TermFrequencyAnalyzer {
 
 			// loop through the result set
 			if (table.equals("BUSINESS")) {
-				System.out.println("Reading in businesses.");
+				//System.out.println("Reading in businesses.");
 				while (rs.next()) {
 					businessIDs.add(rs.getString("id"));
 				}
-				System.out.print("Found Businesses count ");
-				System.out.println(businessIDs.size());
+				//System.out.print("Found Businesses count ");
+				//System.out.println(businessIDs.size());
 			} else if (table.equals("REVIEWS")) {
 				reviews.clear();
-				System.out.println("Reading in Reviews.");
+				//System.out.println("Reading in Reviews.");
 				while (rs.next()) {
 					String temp = rs.getString("text");
 					reviews.add(temp);
 				}
-				System.out.print("Found Reviews count ");
-				System.out.println(reviews.size());
+				//System.out.print("Found Reviews count ");
+				//System.out.println(reviews.size());
 			} else if (table.equals("BUSINESSKEYTERMS")) {
 				keyTerms.clear();
 				while (rs.next()) {
 					String temp = rs.getString("keyTerm");
 					keyTerms.add(temp);
 				}
-				System.out.print("Found Keyterms count: ");
-				System.out.println(keyTerms.size());
+				//System.out.print("Found Keyterms count: ");
+				//System.out.println(keyTerms.size());
 			}
 
 		} catch (SQLException e) {
@@ -136,7 +136,7 @@ public class TermFrequencyAnalyzer {
 		if (topTerms.size() > k) {
 			topTerms.subList(0, k);
 		}
-		System.out.println("Size of top k terms: " + topTerms.size());
+		//System.out.println("Size of top k terms: " + topTerms.size());
 		return topTerms;
 	}
 
@@ -174,7 +174,7 @@ public class TermFrequencyAnalyzer {
 			//writeTopKAttributesToTable(businessID, terms);
 			businessToTerms.put(businessID, terms);
 		} else {
-			System.out.println("Not looking at business " + businessID + "because review count is " + reviews.size());
+			//System.out.println("Not looking at business " + businessID + "because review count is " + reviews.size());
 		}
 	}
 
@@ -258,7 +258,7 @@ public class TermFrequencyAnalyzer {
 		int count = 0;
 		int multiple = 0;
 		for (String business : businessIDs) {
-			System.out.println("Analyzing terms for business with id: " + business);
+			//System.out.println("Analyzing terms for business with id: " + business);
 			analyzeReviewTextForBusiness(business);
 			count ++;
 			if (count % 1000 == 0) {

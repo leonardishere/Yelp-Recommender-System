@@ -37,7 +37,7 @@ public class Business{
 
 	public ArrayList<String> numericval = new ArrayList<String>();
 
-	//private static TermFrequencyAnalyzer termFrequencyAnalyzer = null; //TODO: re-enable this
+	private static TermFrequencyAnalyzer termFrequencyAnalyzer = null; //TODO: re-enable this
 
 	public Business(String id, String name, String neighborhood, String address, String city, String state, String postal_code, double latitude, double longitude, double stars, int review_count, boolean is_open){
 		this.id = id;
@@ -140,12 +140,10 @@ public class Business{
 		}
 
 		//TODO: re-enable this
-		/*
-    if(termFrequencyAnalyzer == null) {
-    	termFrequencyAnalyzer = new TermFrequencyAnalyzer();
-    	termFrequencyAnalyzer.initializeDB();
-    }
-		 */
+	    if(termFrequencyAnalyzer == null) {
+	    	termFrequencyAnalyzer = new TermFrequencyAnalyzer();
+	    	termFrequencyAnalyzer.initializeDB();
+	    }
 	}
 
 	public void addAttribute(String name, String val){

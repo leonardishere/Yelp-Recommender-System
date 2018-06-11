@@ -362,4 +362,12 @@ public class Helper {
 			m[rowNum][i] += row[i];
 		}
 	}
+
+	public static double length(double[] v) {
+	    double sum = 0;
+	    for(int i = 0; i < v.length; ++i) {
+	        sum += v[i]*v[i];
+	    }
+	    return Math.sqrt(sum);
+	}
 }
