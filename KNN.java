@@ -105,8 +105,8 @@ public class KNN {
             UserBusinessInteraction interaction = interactions[i];
             Business business2 = businesses[businessMap.convert(interaction.businessID)];
             double similarity = Helper.length(business.similarity(business2));
-            sumMuls += interaction.rating * (similarity*similarity);
-            sumSims += (similarity*similarity);
+            sumMuls += interaction.rating * similarity;
+            sumSims += similarity;
         }
         if(sumSims > 0) return sumMuls /sumSims;
         else return 3; //most often
@@ -123,8 +123,8 @@ public class KNN {
             UserBusinessInteraction interaction = interactions[i];
             Business business2 = businesses[businessMap.convert(interaction.businessID)];
             double similarity = Helper.length(business.similarity(business2));
-            sumMuls += interaction.rating * (similarity*similarity);
-            sumSims += (similarity*similarity);
+            sumMuls += interaction.rating * similarity;
+            sumSims += similarity;
         }
         if(sumSims > 0) return sumMuls /sumSims;
         else return 3; //most often

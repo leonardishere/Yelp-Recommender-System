@@ -250,7 +250,8 @@ public class DatabaseReader {
     public static boolean saveModel(Connection conn, int numIters, String filepath, double rmse) {
         try {
             //conn.setAutoCommit(false);
-            String sqlStatement = "INSERT INTO model(iters, filepath, rmse) VALUES(?,?,?);";
+            //String sqlStatement = "INSERT INTO model(iters, filepath, rmse) VALUES(?,?,?);";
+            String sqlStatement = "INSERT INTO net(iters, filepath, rmse) VALUES(?,?,?);";
             PreparedStatement preparedStatement = conn.prepareStatement(sqlStatement);
             preparedStatement.setInt(1, numIters);
             preparedStatement.setString(2, filepath);
@@ -264,4 +265,39 @@ public class DatabaseReader {
         }
         return true;
     }
+    
+    public static String getLatestNet(Connection conn) {
+        try {
+            Statement stmt = conn.createStatement();
+            String query = "select iters, filepath from net where iters in (select max(iters) from net);";
+            ResultSet rs = stmt.executeQuery(query);
+            if(rs.next()) {
+                return rs.getString(2);
+            }
+            rs.close();
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static boolean saveNet(Connection conn, int numIters, String filepath, double rmse) {
+        try {
+            //conn.setAutoCommit(false);
+            String sqlStatement = "INSERT INTO net(iters, filepath, rmse) VALUES(?,?,?);";
+            PreparedStatement preparedStatement = conn.prepareStatement(sqlStatement);
+            preparedStatement.setInt(1, numIters);
+            preparedStatement.setString(2, filepath);
+            preparedStatement.setDouble(3, rmse);
+            //preparedStatement.addBatch();
+            //preparedStatement.executeBatch();            
+            preparedStatement.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+    
+    
 }

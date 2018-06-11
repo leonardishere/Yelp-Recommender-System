@@ -103,6 +103,26 @@ public class Helper {
 		return out;
 	}
 
+    /**
+     * Calculates the element wise addition of two vectors, v1+v2.
+     * @param v1 the first vector
+     * @param v2 the second vector
+     * @return v1+v2
+     */
+    public static double[] vvAdd(double[] v1, double[] v2) {
+        int length = v1.length;
+        if(v2.length != length) {
+            System.err.println("Error: input vectors must be the same length.");
+            return null;
+        }
+
+        double[] v3 = new double[length];
+        for(int i = 0; i < length; ++i) {
+            v3[i] = v1[i] + v2[i];
+        }
+        return v3;
+    }
+
 	/**
 	 * Calculates the element wise subtraction difference of two vectors, v1-v2.
 	 * @param v1 the first vector
@@ -119,26 +139,6 @@ public class Helper {
 		double[] v3 = new double[length];
 		for(int i = 0; i < length; ++i) {
 			v3[i] = v1[i] - v2[i];
-		}
-		return v3;
-	}
-
-	/**
-	 * Calculates the element wise addition of two vectors, v1+v2.
-	 * @param v1 the first vector
-	 * @param v2 the second vector
-	 * @return v1+v2
-	 */
-	public static double[] vvAdd(double[] v1, double[] v2) {
-		int length = v1.length;
-		if(v2.length != length) {
-			System.err.println("Error: input vectors must be the same length.");
-			return null;
-		}
-
-		double[] v3 = new double[length];
-		for(int i = 0; i < length; ++i) {
-			v3[i] = v1[i] + v2[i];
 		}
 		return v3;
 	}
@@ -163,6 +163,41 @@ public class Helper {
 		return v3;
 	}
 
+    /**
+     * Calculates the element wise division of two vectors, v1/v2.
+     * @param v1 the first vector
+     * @param v2 the second vector
+     * @return v1/v2
+     */
+    public static double[] vvDiv(double[] v1, double[] v2) {
+        int length = v1.length;
+        if(v2.length != length) {
+            System.err.println("Error: input vectors must be the same length.");
+            return null;
+        }
+
+        double[] v3 = new double[length];
+        for(int i = 0; i < length; ++i) {
+            if(v2[i] == 0) v3[i] = 0;
+            else v3[i] = v1[i] / v2[i];
+        }
+        return v3;
+    }
+
+    /**
+     * Calculates the element wise subtraction of a scalor and a vector.
+     * @param v
+     * @param s
+     * @return
+     */
+    public static double[] svSub(double s, double[] v) {
+        double[] res = new double[v.length];
+        for(int i = 0; i < v.length; ++i) {
+            res[i] = s-v[i];
+        }
+        return res;
+    }
+    
 	/**
 	 * Calculates the element wise multiplation of a scalor and a vector.
 	 * @param v
@@ -370,4 +405,45 @@ public class Helper {
 	    }
 	    return Math.sqrt(sum);
 	}
+	
+	public static double[] softmax(double[] v) {
+	    double sum = 0;
+	    double[] res = new double[v.length];
+	    for(int i = 0; i < v.length; ++i) {
+	        double exp = Math.exp(v[i]);
+	        res[i] = exp;
+	        sum += exp;
+	    }
+	    for(int i = 0; i < v.length; ++i) {
+	        res[i] /= sum;
+	    }
+	    return res;
+	}
+	
+	public static double[][] softmaxGradient(double[] v){
+	    double[][] res = new double[v.length][v.length];
+	    for(int i = 0; i < v.length; ++i) {
+	        for(int j = 0; j < v.length; ++j) {
+	            if(i == j) res[i][j] = v[i]*(1-v[j]);
+	            else res[i][j] = -(v[i]*v[j]);
+	        }
+	    }
+	    return res;
+	}
+	
+	public static double[] flatten(double[][] m) {
+	    double[] res = new double[m.length*m[0].length];
+	    int x = 0;
+	    for(int i = 0; i < m.length; ++i) {
+	        for(int j = 0; j < m[i].length; ++j) {
+	            res[x] = m[i][j];
+	            ++x;
+	        }
+	    }
+	    return res;
+	}
+	
+	public static double sigmoid(double x) {
+        return 1 / (1 + Math.exp(-x));
+    }
 }

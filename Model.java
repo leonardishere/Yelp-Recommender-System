@@ -23,6 +23,7 @@ public class Model implements Serializable{
 	}
 
 	public void feedforward(double[][] input) {
+	    /*
 		m0 = input;										//assembled layer: store input
 		m1 = Helper.elementalMMmul(input, weights); 	//summing layer: multiply assembled layer * weights 
 		v2 = Helper.rowSum(m1); 						//summing layer: sum by row
@@ -33,9 +34,23 @@ public class Model implements Serializable{
 		v7 = Helper.svMul(s6, v4);						//normalization layer: normalize
 		v8 = Helper.vvMul(v7, MULTIPLIERS);				//output layer: multiply multiplier * confidence
 		s9 = Helper.sum(v8);							//output layer: sum
+		*/
+        m0 = input;                                     //assembled layer: store input
+        m1 = Helper.elementalMMmul(input, weights);     //summing layer: multiply assembled layer * weights 
+        v2 = Helper.rowSum(m1);                         //summing layer: sum by row
+        v3 = Helper.vvAdd(v2, biases);                  //summing layer: add biases
+        //v4 = Helper.removeNegatives(v3);                //normalization layer: remove negatives
+        v4 = Helper.softmax(v3);                        //normalization layer: compute softmax
+        //s5 = Helper.sum(v4);                            //normalization layer: find sum
+        //s6 = s5==0? 0 : 1/s5;                           //normalization layer: find scale
+        //v7 = Helper.svMul(s6, v4);                      //normalization layer: normalize
+        //v8 = Helper.vvMul(v7, MULTIPLIERS);             //output layer: multiply multiplier * confidence
+        v8 = Helper.vvMul(v4, MULTIPLIERS);             //output layer: multiply multiplier * softmax
+        s9 = Helper.sum(v8);                            //output layer: sum
 	}
 
 	public void backpropagate(double[] target, double eta) {
+	    /*
 		double[] e1 = Helper.vvSub(target, v7);			//output layer: find error
 		double[] e2 = Helper.svMul(s5, e1);				//normalization layer: scale error
 		double[] e3 = Helper.svMul(eta, e2);			//normalization layer: scale by learning rate
@@ -44,6 +59,15 @@ public class Model implements Serializable{
 		//double[][] e4 = Helper.smMul(eta, e3);		//summing layer: scale by learning rate
 		weights = Helper.mmAdd(weights, e4);			//summing layer: adjust weights
 		biases = Helper.vvAdd(biases, e3);				//summing layer: adjust biases
+		*/
+        double[] e1 = Helper.vvSub(target, v4);         //output layer: find error
+        double[] e2 = Helper.svMul(s5, e1);             //normalization layer: scale error
+        double[] e3 = Helper.svMul(eta, e2);            //normalization layer: scale by learning rate
+        double[][] e4 = Helper.vmMul(e3, m0);           //summing layer: scale error by each input
+        //double[][] e3 = Helper.vmMul(e2, m0);         //summing layer: scale error by each input
+        //double[][] e4 = Helper.smMul(eta, e3);        //summing layer: scale by learning rate
+        weights = Helper.mmAdd(weights, e4);            //summing layer: adjust weights
+        biases = Helper.vvAdd(biases, e3);              //summing layer: adjust biases
 	}
 
 	public double[] classOutput() {
