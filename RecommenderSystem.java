@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.Scanner;
+import java.util.Collections;
 
 /**
  * RecommenderSystem is the main class of the yelp recommender system.
@@ -40,11 +41,11 @@ public class RecommenderSystem {
         //conn = DatabaseReader.connect_sqlite(SQLITE_URL);
         //formatter = "net_all_%d.ser";
         
-        //conn = DatabaseReader.connect_sqlite(SQLITE_RESTAURANT_URL);
-        //formatter = "net_rest_%d.ser";
+        conn = DatabaseReader.connect_sqlite(SQLITE_RESTAURANT_URL);
+        formatter = "net_rest_%d.ser";
         
-        conn = DatabaseReader.connect_sqlite(SQLITE_ACTIVE_LIFE_URL);
-        formatter = "net_active_%d.ser";
+        //conn = DatabaseReader.connect_sqlite(SQLITE_ACTIVE_LIFE_URL);
+        //formatter = "net_active_%d.ser";
         
         loadUsers();
         loadBusinesses();
@@ -53,12 +54,12 @@ public class RecommenderSystem {
         loadTrainingRatings();
         loadTestingRatings();
         
-        boolean loadedModel = loadModel();
-        if(!loadedModel) createModel();
+        //boolean loadedModel = loadModel();
+        //if(!loadedModel) createModel();
         //loadModel("model_rest_632.ser");
         
-        //boolean loadedNet = loadNet();
-        //if(!loadedNet) createNet();
+        boolean loadedNet = loadNet();
+        if(!loadedNet) createNet();
     }
 
     public void loadUsers() {
@@ -464,11 +465,11 @@ public class RecommenderSystem {
                     //if(rating == thisRating) similarity = Helper.svMul(2, similarity);
                     Helper.inplaceAddRow(assembledSimilarityMatrix, similarity, rating-1);
                 }
-                //double[] inputs = Helper.normalize(Helper.flatten(assembledSimilarityMatrix));
-                //net.feedforward(inputs);
-                //double prediction = net.getOutput();
-                model.feedforward(assembledSimilarityMatrix);
-                double prediction = model.numericalOutput();
+                double[] inputs = Helper.normalize(Helper.flatten(assembledSimilarityMatrix));
+                net.feedforward(inputs);
+                double prediction = net.getOutput();
+                //model.feedforward(assembledSimilarityMatrix);
+                //double prediction = model.numericalOutput();
                 recommendations.add(new SortObject(business, prediction));
             }
         }
@@ -477,9 +478,16 @@ public class RecommenderSystem {
         Arrays.sort(recommendations2);
         System.out.println("Your recommended businesses: ");
         System.out.printf("\t%3s, %22s, %s\n", "num", "business id", "business name");
+	/*
         for(int i = 0; i < 5; ++i) {
-            System.out.printf("\t%3d, %22s, %s\n", i+1, recommendations2[i].business.id, recommendations2[i].business.name);
+            System.out.printf("\t%3d, %3.1f, %22s, %s\n", i+1, recommendations2[i].value, recommendations2[i].business.id, recommendations2[i].business.name);
         }
+	System.out.println("");
+	*/
+	Collections.reverse(Arrays.asList(recommendations2));
+	for(int i = 0; i < 5; ++i) {
+		System.out.printf("\t%3d, %22s, %s\n", i+1, recommendations2[i].business.id, recommendations2[i].business.name);
+	}
     }
 
     public void printValues() {
@@ -576,7 +584,7 @@ public class RecommenderSystem {
             if(train) recSys.train();
             //if(printValues) recSys.printValues();
             if(recommend) recSys.recommend(scan);
-            System.out.print("enter q to quit or anything else to continue");
+            System.out.print("enter q to quit or anything else to continue\n: ");
             String str = scan.next();
             if(str.equalsIgnoreCase("q")) break;
         }
