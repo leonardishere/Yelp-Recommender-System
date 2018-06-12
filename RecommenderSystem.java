@@ -4,6 +4,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -26,14 +27,25 @@ public class RecommenderSystem {
     public NeuralNetwork net = null;
     public int numIters = 0;
     public ArrayList<UserBusinessInteraction> testingData = null;
-    public static final String SQLITE_YELP_DB_URL = "jdbc:sqlite:/local/weka/yelp.db";
+    public static final String SQLITE_URL = "jdbc:sqlite:/local/weka/yelp.db";
+    public static final String SQLITE_RESTAURANT_URL = "jdbc:sqlite:/local/weka/yelp_restaurants.db";
+    public static final String SQLITE_ACTIVE_LIFE_URL = "jdbc:sqlite:/local/weka/yelp_activelife.db";
     public static final boolean USE_SQLITE = true; //as opposed to mysql
     public static final boolean RESTAURANTS_ONLY = true; //as opposed to all businesses
     public Connection conn = null;
+    String formatter = null;
 
     public RecommenderSystem() {
+
+        //conn = DatabaseReader.connect_sqlite(SQLITE_URL);
+        //formatter = "net_all_%d.ser";
         
-        conn = USE_SQLITE ? DatabaseReader.connect_sqlite(RESTAURANTS_ONLY) : DatabaseReader.connect_mysql();
+        conn = DatabaseReader.connect_sqlite(SQLITE_RESTAURANT_URL);
+        formatter = "net_rest_%d.ser";
+        
+        //conn = DatabaseReader.connect_sqlite(SQLITE_ACTIVE_LIFE_URL);
+        //formatter = "net_active_%d.ser";
+        
         loadUsers();
         loadBusinesses();
         loadAttributes();
@@ -50,7 +62,7 @@ public class RecommenderSystem {
 
     public void loadUsers() {
         System.out.println("Begin loading users");
-        users = DatabaseReader.loadUsers(conn, RESTAURANTS_ONLY);
+        users = DatabaseReader.loadUsers(conn);
         userMap = new KeyMap();
         numUsers = users.length;
         for(int i = 0; i < numUsers; ++i) {
@@ -60,7 +72,7 @@ public class RecommenderSystem {
 
     public void loadBusinesses() {
         System.out.println("Begin loading businesses");
-        businesses = DatabaseReader.loadBusinesses(conn, RESTAURANTS_ONLY);
+        businesses = DatabaseReader.loadBusinesses(conn);
         businessMap = new KeyMap();
         numBusinesses = businesses.length;
         for(int i = 0; i < numBusinesses; ++i) {
@@ -70,7 +82,7 @@ public class RecommenderSystem {
 
     public void loadAttributes() {
         System.out.println("Begin loading attributes");
-        ArrayList<BusinessAttribute> attributes = DatabaseReader.loadAttributes(conn, RESTAURANTS_ONLY);
+        ArrayList<BusinessAttribute> attributes = DatabaseReader.loadAttributes(conn);
         for(int i = 0; i < attributes.size(); ++i) {
             BusinessAttribute attribute = attributes.get(i);
             businesses[businessMap.convert(attribute.business_id)].addAttribute(attribute.name, attribute.value);
@@ -79,7 +91,7 @@ public class RecommenderSystem {
 
     public void loadCategories() {
         System.out.println("Begin loading categories");
-        ArrayList<BusinessAttribute> categories = DatabaseReader.loadCategories(conn, RESTAURANTS_ONLY);
+        ArrayList<BusinessAttribute> categories = DatabaseReader.loadCategories(conn);
         for(int i = 0; i < categories.size(); ++i) {
             BusinessAttribute category = categories.get(i);
             businesses[businessMap.convert(category.business_id)].addAttribute(category.name, category.value);
@@ -88,7 +100,7 @@ public class RecommenderSystem {
 
     public void loadTrainingRatings() {
         System.out.println("Begin loading training data");
-        ArrayList<UserBusinessInteraction> trainingData = DatabaseReader.loadTrainingData(conn, USE_SQLITE, RESTAURANTS_ONLY);
+        ArrayList<UserBusinessInteraction> trainingData = DatabaseReader.loadTrainingData(conn, USE_SQLITE);
         for(UserBusinessInteraction data : trainingData) {
             users[userMap.convert(data.userID)].addRating(data.businessID, data.rating);
         }
@@ -96,7 +108,7 @@ public class RecommenderSystem {
 
     public void loadTestingRatings() {
         System.out.println("Begin loading testing data");
-        testingData = DatabaseReader.loadTestingData(conn, USE_SQLITE, RESTAURANTS_ONLY);
+        testingData = DatabaseReader.loadTestingData(conn, USE_SQLITE);
     }
 
     public boolean loadModel() {
@@ -265,7 +277,8 @@ public class RecommenderSystem {
     
     public boolean saveNet(double rmse) {
         System.out.println("Begin saving net");
-        String filepath = RESTAURANTS_ONLY ? String.format("net_rest_%d.ser", numIters) : String.format("net_%d.ser", numIters);
+        //String filepath = RESTAURANTS_ONLY ? String.format("net_rest_%d.ser", numIters) : String.format("net_%d.ser", numIters);
+        String filepath = String.format(formatter, numIters);
         // Serialization 
         try{   
             //Saving of object in a file
@@ -403,14 +416,14 @@ public class RecommenderSystem {
         return Math.sqrt(squaredErrorSum / count);
     }
 
-    public void recommend() {
-        Scanner scan = new Scanner(System.in);
+    public void recommend(Scanner scan) {
+        //Scanner scan = new Scanner(System.in);
         Random rand = new Random();
         System.out.println("Hello. Welcome to \"Combining Mining Techniques to Improve Business Recommendation with Yelp Database\".");
         System.out.println("Please enter your 22 character id to begin, or \"unknown\" if you don't know it.");
         System.out.print(": ");
         String userID = scan.next();
-        scan.close();
+        //scan.close();
         if(userID.equalsIgnoreCase("unknown")){
             int choice = rand.nextInt(numUsers);
             userID = userMap.convert(choice);
@@ -423,6 +436,7 @@ public class RecommenderSystem {
         } else {
             System.out.println("Welcome!");
         }
+        User user = users[userMap.convert(userID)];
         ArrayList<UserBusinessInteraction> interactions = DatabaseReader.loadReviewsForUser(conn, userID);
         if(interactions.isEmpty()) { //users without any reviews shouldnt exist but just in case
             System.out.println("It appears that you haven't reviewed any businesses.");
@@ -434,6 +448,34 @@ public class RecommenderSystem {
             UserBusinessInteraction interaction = interactions.get(i);
             Business business = businesses[businessMap.convert(interaction.businessID)];
             System.out.printf("\t%d stars: %s\n", interaction.rating, business.name);
+        }
+        
+        System.out.println("Calculating recommendations");
+        ArrayList<SortObject> recommendations = new ArrayList<>();
+        for(int i = 0; i < businesses.length; ++i) {
+            Business business = businesses[i];
+            if(!user.map.containsKey(business.id)) {
+                double[][] assembledSimilarityMatrix = Helper.zeros(NUM_STARS, NUM_FEATURES);
+                for(int j = 0; j < interactions.size(); ++j) {
+                    Business business2 = businesses[businessMap.convert(interactions.get(j).businessID)];
+                    double[] similarity = business.similarity(business2);
+                    int rating = interactions.get(j).rating;
+                    //if(rating == thisRating) similarity = Helper.svMul(2, similarity);
+                    Helper.inplaceAddRow(assembledSimilarityMatrix, similarity, rating-1);
+                }
+                double[] inputs = Helper.normalize(Helper.flatten(assembledSimilarityMatrix));
+                net.feedforward(inputs);
+                double prediction = net.getOutput();
+                recommendations.add(new SortObject(business, prediction));
+            }
+        }
+        SortObject[] recommendations2 = new SortObject[recommendations.size()];
+        recommendations.toArray(recommendations2);
+        Arrays.sort(recommendations2);
+        System.out.println("Your recommended businesses: ");
+        System.out.printf("\t%3s, %22s, %s\n", "num", "business id", "business name");
+        for(int i = 0; i < 5; ++i) {
+            System.out.printf("\t%3d, %22s, %s\n", i+1, recommendations2[i].business.id, recommendations2[i].business.name);
         }
     }
 
@@ -526,10 +568,17 @@ public class RecommenderSystem {
         //printValues = true;
         //recSys.fakeItTilYouMakeIt();
         
-        if(train) recSys.train();
-        if(printValues) recSys.printValues();
-        if(recommend) recSys.recommend();
+        Scanner scan = new Scanner(System.in);
+        while(true) {
+            if(train) recSys.train();
+            if(printValues) recSys.printValues();
+            if(recommend) recSys.recommend(scan);
+            System.out.print("enter q to quit or anything else to continue");
+            String str = scan.next();
+            if(str.equalsIgnoreCase("q")) break;
+        }
+        scan.close();
 
-        System.out.println("Program end");
+        //System.out.println("Program end");
     }
 }

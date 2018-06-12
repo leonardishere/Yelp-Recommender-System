@@ -55,12 +55,10 @@ public class DatabaseReader {
      * Creates a connection to the sqlite database.
      * @return
      */
-    public static Connection connect_sqlite(boolean restaurantsOnly) {
+    public static Connection connect_sqlite(String url) {
         Connection conn = null;
         try{
-            conn = restaurantsOnly
-                    ? DriverManager.getConnection(SQLITE_RESTAURANT_URL)
-                    : DriverManager.getConnection(SQLITE_URL);
+            conn = DriverManager.getConnection(url);
         } catch(Exception e) {
             e.printStackTrace();
         }
@@ -71,8 +69,8 @@ public class DatabaseReader {
      * Loads the users from database into memory.
      * @return the user
      */
-    public static User[] loadUsers(Connection conn, boolean restaurantsOnly) {
-        ArrayList<User> users = new ArrayList<>(restaurantsOnly ? NUM_USERS_RESTAURANTS : NUM_USERS);
+    public static User[] loadUsers(Connection conn) {
+        ArrayList<User> users = new ArrayList<>(NUM_USERS);
 
         Statement stmt;
         try {
@@ -96,8 +94,8 @@ public class DatabaseReader {
      * Loads the users from database into memory.
      * @return the business 
      */
-    public static Business[] loadBusinesses(Connection conn, boolean restaurantsOnly) {
-        ArrayList<Business> businesses = new ArrayList<>(restaurantsOnly ? NUM_RESTAURANTS : NUM_BUSINESSES);
+    public static Business[] loadBusinesses(Connection conn) {
+        ArrayList<Business> businesses = new ArrayList<>(NUM_BUSINESSES);
         try{
             Statement stmt = conn.createStatement();
             String query = "select id, name, neighborhood, address, city, state, postal_code, latitude, longitude, stars, review_count, is_open from business order by id asc";
@@ -115,8 +113,8 @@ public class DatabaseReader {
         return businesses2;
     }
 
-    public static ArrayList<BusinessAttribute> loadAttributes(Connection conn, boolean restaurantsOnly){
-        ArrayList<BusinessAttribute> attributes = new ArrayList<>(restaurantsOnly ? NUM_RESTAURANT_ATTRIBUTES : NUM_ATTRIBUTES);
+    public static ArrayList<BusinessAttribute> loadAttributes(Connection conn){
+        ArrayList<BusinessAttribute> attributes = new ArrayList<>(NUM_ATTRIBUTES);
         try{
             Statement stmt = conn.createStatement();
             String query = "select business_id, name, value from attribute";
@@ -131,8 +129,8 @@ public class DatabaseReader {
         return attributes;
     }
 
-    public static ArrayList<BusinessAttribute> loadCategories(Connection conn, boolean restaurantsOnly){
-        ArrayList<BusinessAttribute> categories = new ArrayList<>(restaurantsOnly ? NUM_RESTAURANT_CATEGORIES : NUM_CATEGORIES);
+    public static ArrayList<BusinessAttribute> loadCategories(Connection conn){
+        ArrayList<BusinessAttribute> categories = new ArrayList<>(NUM_CATEGORIES);
         try{
             Statement stmt = conn.createStatement();
             String query = "select business_id, category from category";
@@ -147,8 +145,8 @@ public class DatabaseReader {
         return categories;
     }
 
-    public static ArrayList<UserBusinessInteraction> loadTrainingData(Connection conn, boolean useSqlite, boolean restaurantsOnly){
-        ArrayList<UserBusinessInteraction> interactions = new ArrayList<>(restaurantsOnly ? NUM_TRAINING_RESTAURANTS : NUM_TRAINING_DATA);
+    public static ArrayList<UserBusinessInteraction> loadTrainingData(Connection conn, boolean useSqlite){
+        ArrayList<UserBusinessInteraction> interactions = new ArrayList<>(NUM_TRAINING_DATA);
         try{
             int step = 1000000;
             for(int i = 0; i < NUM_TESTING_DATA; i += step) {
@@ -165,11 +163,12 @@ public class DatabaseReader {
         } catch(Exception e){
             e.printStackTrace();
         }
+        interactions.trimToSize();
         return interactions;
     }
 
-    public static ArrayList<UserBusinessInteraction> loadTestingData(Connection conn, boolean useSqlite, boolean restaurantsOnly){
-        ArrayList<UserBusinessInteraction> interactions = new ArrayList<>(restaurantsOnly ? NUM_TESTING_RESTAURANTS : NUM_TESTING_DATA);
+    public static ArrayList<UserBusinessInteraction> loadTestingData(Connection conn, boolean useSqlite){
+        ArrayList<UserBusinessInteraction> interactions = new ArrayList<>(NUM_TESTING_DATA);
         try{
             Statement stmt = conn.createStatement();
             String query = useSqlite ? "select user_id, business_id, stars from review where date >= datetime('2017-01-27')" : "select user_id, business_id, stars from review where date >= '2017-01-27'"; 
@@ -181,11 +180,12 @@ public class DatabaseReader {
         } catch(Exception e){
             e.printStackTrace();
         }
+        interactions.trimToSize();
         return interactions;
     }
 
-    public static ArrayList<UserBusinessInteraction> loadAllReviews(Connection conn, boolean useSqlite, boolean restaurantsOnly){
-        ArrayList<UserBusinessInteraction> interactions = new ArrayList<>(restaurantsOnly ? NUM_TOTAL_RESTAURANTS : NUM_TOTAL_REVIEWS);
+    public static ArrayList<UserBusinessInteraction> loadAllReviews(Connection conn, boolean useSqlite){
+        ArrayList<UserBusinessInteraction> interactions = new ArrayList<>(NUM_TOTAL_REVIEWS);
         try{
             Statement stmt = conn.createStatement();
             String query = "select user_id, business_id, stars from review"; 
@@ -197,6 +197,7 @@ public class DatabaseReader {
         } catch(Exception e){
             e.printStackTrace();
         }
+        interactions.trimToSize();
         return interactions;
     }
     
