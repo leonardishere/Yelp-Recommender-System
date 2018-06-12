@@ -15,9 +15,15 @@ public class KNN {
     public static final boolean USE_SQLITE = true; //as opposed to mysql
     public static final boolean RESTAURANTS_ONLY = true; //as opposed to all businesses
     public Connection conn = null;
+    public static final String SQLITE_URL = "jdbc:sqlite:/local/weka/yelp.db";
+    public static final String SQLITE_RESTAURANT_URL = "jdbc:sqlite:/local/weka/yelp_restaurants.db";
+    public static final String SQLITE_ACTIVE_LIFE_URL = "jdbc:sqlite:/local/weka/yelp_activelife.db";
     
     public KNN() {
-        conn = USE_SQLITE ? DatabaseReader.connect_sqlite(RESTAURANTS_ONLY) : DatabaseReader.connect_mysql();
+        //conn = DatabaseReader.connect_sqlite(SQLITE_URL);
+        conn = DatabaseReader.connect_sqlite(SQLITE_RESTAURANT_URL);
+        //conn = DatabaseReader.connect_sqlite(SQLITE_ACTIVE_LIFE_URL);
+        
         loadUsers();
         loadBusinesses();
         loadAttributes();
@@ -30,7 +36,7 @@ public class KNN {
     
     public void loadUsers() {
         System.out.println("Begin loading users");
-        users = DatabaseReader.loadUsers(conn, RESTAURANTS_ONLY);
+        users = DatabaseReader.loadUsers(conn);
         userMap = new KeyMap();
         numUsers = users.length;
         for(int i = 0; i < numUsers; ++i) {
@@ -40,7 +46,7 @@ public class KNN {
 
     public void loadBusinesses() {
         System.out.println("Begin loading businesses");
-        businesses = DatabaseReader.loadBusinesses(conn, RESTAURANTS_ONLY);
+        businesses = DatabaseReader.loadBusinesses(conn);
         businessMap = new KeyMap();
         numBusinesses = businesses.length;
         for(int i = 0; i < numBusinesses; ++i) {
@@ -50,7 +56,7 @@ public class KNN {
 
     public void loadAttributes() {
         System.out.println("Begin loading attributes");
-        ArrayList<BusinessAttribute> attributes = DatabaseReader.loadAttributes(conn, RESTAURANTS_ONLY);
+        ArrayList<BusinessAttribute> attributes = DatabaseReader.loadAttributes(conn);
         for(int i = 0; i < attributes.size(); ++i) {
             BusinessAttribute attribute = attributes.get(i);
             businesses[businessMap.convert(attribute.business_id)].addAttribute(attribute.name, attribute.value);
@@ -59,7 +65,7 @@ public class KNN {
 
     public void loadCategories() {
         System.out.println("Begin loading categories");
-        ArrayList<BusinessAttribute> categories = DatabaseReader.loadCategories(conn, RESTAURANTS_ONLY);
+        ArrayList<BusinessAttribute> categories = DatabaseReader.loadCategories(conn);
         for(int i = 0; i < categories.size(); ++i) {
             BusinessAttribute category = categories.get(i);
             businesses[businessMap.convert(category.business_id)].addAttribute(category.name, category.value);
@@ -68,7 +74,7 @@ public class KNN {
 
     public void loadTrainingRatings() {
         System.out.println("Begin loading training data");
-        ArrayList<UserBusinessInteraction> trainingData = DatabaseReader.loadTrainingData(conn, USE_SQLITE, RESTAURANTS_ONLY);
+        ArrayList<UserBusinessInteraction> trainingData = DatabaseReader.loadTrainingData(conn, USE_SQLITE);
         for(UserBusinessInteraction data : trainingData) {
             users[userMap.convert(data.userID)].addRating(data.businessID, data.rating);
         }
@@ -76,7 +82,7 @@ public class KNN {
 
     public void loadTestingRatings() {
         System.out.println("Begin loading testing data");
-        testingData = DatabaseReader.loadTestingData(conn, USE_SQLITE, RESTAURANTS_ONLY);
+        testingData = DatabaseReader.loadTestingData(conn, USE_SQLITE);
     }
 
     public double rmse() {
