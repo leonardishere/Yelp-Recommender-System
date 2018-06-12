@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Date;
 
 /**
  * This class provides a high level interface to interacting with the database.
@@ -299,5 +300,39 @@ public class DatabaseReader {
         return true;
     }
     
+    public static void loadAllTest(int step) {
+        try{
+            Connection conn = connect_mysql();
+            long start = System.nanoTime();
+            Date startDate = new Date();
+            for(int row = 0; row < NUM_TOTAL_REVIEWS; row += step) {
+                Statement stmt = conn.createStatement();
+                String query = "select * from review limit " + row + ", " + step; 
+                ResultSet rs = stmt.executeQuery(query);
+                rs.close();
+            }
+            long end = System.nanoTime();
+            Date endDate = new Date();
+            conn.close();
+            
+            System.out.printf("step size  : %7d\n", step);
+            System.out.printf("start date : %s\n", startDate);
+            System.out.printf("end date   : %s\n", endDate);
+            System.out.printf("duration   : %5.1f sec\n", (end-start)/1000000000.0);
+        } catch(Exception e){
+            e.printStackTrace();
+        }
+    }
     
+    public static void main(String[] args) {
+        System.out.println("program start");
+        //loadAllTest(1000000);
+        //loadAllTest(100000);
+        loadAllTest(10000);
+        //loadAllTest(1000);
+        //loadAllTest(100);
+        //loadAllTest(10);
+        //loadAllTest(1);
+        System.out.println("program end");
+    }
 }

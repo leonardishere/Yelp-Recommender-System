@@ -199,13 +199,15 @@ public class RecommenderSystem {
     }
     
     public boolean loadNet() {
-        System.out.println("Begin loading net");
+        System.out.print("Begin loading net");
         String filepath = DatabaseReader.getLatestNet(conn);
         if(filepath == null) {
-            System.out.println("Cancel loading model");
+            System.out.println("\nCancel loading net");
             return false;
         }
+        System.out.printf(" from %s\n", filepath);
 
+        
         //deserialize
         model = null;
         try {   
@@ -262,7 +264,7 @@ public class RecommenderSystem {
     }
     
     public boolean saveNet(double rmse) {
-        System.out.println("Begin saving model");
+        System.out.println("Begin saving net");
         String filepath = RESTAURANTS_ONLY ? String.format("net_rest_%d.ser", numIters) : String.format("net_%d.ser", numIters);
         // Serialization 
         try{   
@@ -271,7 +273,7 @@ public class RecommenderSystem {
             ObjectOutputStream out = new ObjectOutputStream(file);
 
             // Method for serialization of object
-            out.writeObject(model);
+            out.writeObject(net);
 
             out.close();
             file.close();
@@ -279,7 +281,7 @@ public class RecommenderSystem {
             e.printStackTrace();
             return false;
         }
-        return DatabaseReader.saveModel(conn, numIters, filepath, rmse);
+        return DatabaseReader.saveNet(conn, numIters, filepath, rmse);
     }
 
     public void train() {
@@ -297,7 +299,7 @@ public class RecommenderSystem {
             double rmse = rmse();
             //double rmse = approxRmse(100);
             System.out.printf("finished iter %4d. rmse: %f\n", numIters, rmse);
-            saveModel(rmse);
+            saveNet(rmse);
         }
     }
 
@@ -327,7 +329,8 @@ public class RecommenderSystem {
                 Helper.inplaceAddRow(assembledSimilarityMatrix, similarity, rating-1);
             }
             //model.sgd(assembledSimilarityMatrix, thisRating-1, eta);
-            net.sgd(Helper.flatten(assembledSimilarityMatrix), thisRating, eta);
+            double[] inputs = Helper.normalize(Helper.flatten(assembledSimilarityMatrix));
+            net.sgd(inputs, thisRating, eta);
             ++i;
         }
         ++numIters;
@@ -338,6 +341,8 @@ public class RecommenderSystem {
     public double rmse() {
         System.out.println("Begin calculating rmse");
         double squaredErrorSum = 0;
+        double averagePrediction = 0;
+        double averageTarget = 0;
         for(int i = 0; i < testingData.size(); ++i) {
             double[][] assembledSimilarityMatrix = Helper.zeros(NUM_STARS, NUM_FEATURES);
             User user = users[userMap.convert(testingData.get(i).userID)];
@@ -353,12 +358,19 @@ public class RecommenderSystem {
             }
             //model.feedforward(assembledSimilarityMatrix);
             //double prediction = model.numericalOutput();
-            net.feedforward(Helper.flatten(assembledSimilarityMatrix));
+            double[] inputs = Helper.normalize(Helper.flatten(assembledSimilarityMatrix));
+            net.feedforward(inputs);
             double prediction = net.getOutput();
+            averagePrediction += prediction;
+            averageTarget += thisRating;
             double diff = thisRating - prediction;
             squaredErrorSum += (diff*diff);
         }
-        return Math.sqrt(squaredErrorSum / testingData.size());
+        averagePrediction /= testingData.size();
+        averageTarget /= testingData.size();
+        System.out.printf("average prediction: %f. average target: %f\n", averagePrediction, averageTarget);
+        double rmse = Math.sqrt(squaredErrorSum / testingData.size());
+        return rmse;
     }
 
     public double approxRmse(int count) {
@@ -382,7 +394,8 @@ public class RecommenderSystem {
             }
             //model.feedforward(assembledSimilarityMatrix);
             //double prediction = model.numericalOutput();
-            net.feedforward(Helper.flatten(assembledSimilarityMatrix));
+            double[] inputs = Helper.normalize(Helper.flatten(assembledSimilarityMatrix));
+            net.feedforward(inputs);
             double prediction = net.getOutput();
             double diff = thisRating - prediction;
             squaredErrorSum += (diff*diff);

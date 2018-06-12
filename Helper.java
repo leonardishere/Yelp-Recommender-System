@@ -446,4 +446,30 @@ public class Helper {
 	public static double sigmoid(double x) {
         return 1 / (1 + Math.exp(-x));
     }
+
+	/**
+	 * Normalizes the vector so that the minimal value becomes 0 and the maximal value becomes 1.
+	 * @param v
+	 * @return
+	 */
+	public static double[] normalize(double[] v) {
+	    double min = Double.POSITIVE_INFINITY;
+	    double max = Double.NEGATIVE_INFINITY;
+	    for(int i = 0; i < v.length; ++i) {
+	        if(v[i] < min) min = v[i];
+	        if(v[i] > max) max = v[i];
+	    }
+	    double diff = max - min;
+	    double[] res = new double[v.length];
+	    if(diff == 0) {
+	        for(int i = 0; i < v.length; ++i) {
+	            res[i] = 0;
+	        }
+	    } else {
+    	    for(int i = 0; i < v.length; ++i) {
+    	        res[i] = (v[i] - min) / diff;
+    	    }
+	    }
+	    return res;
+	}
 }
