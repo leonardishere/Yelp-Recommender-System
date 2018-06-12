@@ -52,12 +52,13 @@ public class RecommenderSystem {
         loadCategories();
         loadTrainingRatings();
         loadTestingRatings();
-        //boolean loadedModel = loadModel();
-        //if(!loadedModel) createModel();
+        
+        boolean loadedModel = loadModel();
+        if(!loadedModel) createModel();
         //loadModel("model_rest_632.ser");
         
-        boolean loadedNet = loadNet();
-        if(!loadedNet) createNet();
+        //boolean loadedNet = loadNet();
+        //if(!loadedNet) createNet();
     }
 
     public void loadUsers() {
@@ -463,9 +464,11 @@ public class RecommenderSystem {
                     //if(rating == thisRating) similarity = Helper.svMul(2, similarity);
                     Helper.inplaceAddRow(assembledSimilarityMatrix, similarity, rating-1);
                 }
-                double[] inputs = Helper.normalize(Helper.flatten(assembledSimilarityMatrix));
-                net.feedforward(inputs);
-                double prediction = net.getOutput();
+                //double[] inputs = Helper.normalize(Helper.flatten(assembledSimilarityMatrix));
+                //net.feedforward(inputs);
+                //double prediction = net.getOutput();
+                model.feedforward(assembledSimilarityMatrix);
+                double prediction = model.numericalOutput();
                 recommendations.add(new SortObject(business, prediction));
             }
         }
