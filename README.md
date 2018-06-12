@@ -9,5 +9,10 @@ Group Members: Jason Chen, Andrew Leonard, Alan Nguyen, Cassidy Tarng
 
 Steps for Running our software:
 
-Download Jars from here:
+1. Download Jars from here:
+  1. a. 
+  1. b. 
+  
+  
+ 
 
