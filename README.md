@@ -18,6 +18,13 @@ Steps for Running our software:
     Download the database and set up the server so it interacts with your database. 
   4. Go to DatabaseDumper.java. Change the credentials at lines 16, 17, and 18 to reflect your server.
   5. Run the main of DatabaseDumper.java. This code converts the MySql database to a Sqlite Database. It takes several hours.
+  6. Copy all the files to a computer that has sqlite3 installed (/local/weka in the DC) and execute all of those newly generated sql files to read them into your sqlite database.
+  7. (Optional) Create the table in the database for the Term Frequency Analysis using this command:
+  CREATE TABLE BusinessKeyTerms(id varchar(255), businessID varchar(255), keyTerm varchar(255));
+  8. (Optional) Run the Term Frequency Analyzer using the following commands (This takes at least a day depending on your hardware):
+  javac -cp .:/local/weka/lib/* TermFrequencyAnalyzer.java
+java -cp .:/local/weka/lib/* TermFrequencyAnalyzer
+9. Run the main in RecommenderSystem
   
   
   
