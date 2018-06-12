@@ -10,8 +10,10 @@ Group Members: Jason Chen, Andrew Leonard, Alan Nguyen, Cassidy Tarng
 Steps for Running our software:
 
   1. Download Jars from here:
-  a. 
-  b.
+  a. Stanford POSTagger - https://nlp.stanford.edu/software/tagger.html
+  b. Maven Repository Jackson - https://mvnrepository.com/artifact/com.fasterxml.jackson.core
+  c. Maven Repository MySQL Connector - https://mvnrepository.com/artifact/mysql/mysql-connector-java/8.0.11
+  d. Maven Repository SQLite JDBC - https://mvnrepository.com/artifact/org.xerial/sqlite-jdbc/3.21.0
   
   2. Download the Yelp Dataset from : https://www.yelp.com/dataset/download
   3. Set up a MySql Server by going to MySql.com https://dev.mysql.com/doc/mysql-getting-started/en/
@@ -25,8 +27,7 @@ Steps for Running our software:
   javac -cp .:/local/weka/lib/* TermFrequencyAnalyzer.java
 java -cp .:/local/weka/lib/* TermFrequencyAnalyzer
 9. Run the main in RecommenderSystem
-  
-  
+
   
   
  
