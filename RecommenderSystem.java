@@ -40,11 +40,11 @@ public class RecommenderSystem {
         //conn = DatabaseReader.connect_sqlite(SQLITE_URL);
         //formatter = "net_all_%d.ser";
         
-        conn = DatabaseReader.connect_sqlite(SQLITE_RESTAURANT_URL);
-        formatter = "net_rest_%d.ser";
+        //conn = DatabaseReader.connect_sqlite(SQLITE_RESTAURANT_URL);
+        //formatter = "net_rest_%d.ser";
         
-        //conn = DatabaseReader.connect_sqlite(SQLITE_ACTIVE_LIFE_URL);
-        //formatter = "net_active_%d.ser";
+        conn = DatabaseReader.connect_sqlite(SQLITE_ACTIVE_LIFE_URL);
+        formatter = "net_active_%d.ser";
         
         loadUsers();
         loadBusinesses();
@@ -558,13 +558,13 @@ public class RecommenderSystem {
         System.out.println("Program start");
 
         boolean train = false;
-        boolean printValues = false;
+        //boolean printValues = false;
         boolean recommend = false;
         //System.out.printf("args.length: %d\n", args.length);
         for(int i = 0; i < args.length; ++i) {
             //System.out.printf("args[%d]: %s\n", i, args[i]);
             if(args[i].equals("-t")) train = true;
-            if(args[i].equals("-p")) printValues = true;
+            //if(args[i].equals("-p")) printValues = true;
             if(args[i].equals("-r")) recommend = true;
         }
         RecommenderSystem recSys = new RecommenderSystem();
@@ -574,7 +574,7 @@ public class RecommenderSystem {
         Scanner scan = new Scanner(System.in);
         while(true) {
             if(train) recSys.train();
-            if(printValues) recSys.printValues();
+            //if(printValues) recSys.printValues();
             if(recommend) recSys.recommend(scan);
             System.out.print("enter q to quit or anything else to continue");
             String str = scan.next();

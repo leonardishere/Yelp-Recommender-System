@@ -846,12 +846,6 @@ public class DatabaseDumper {
 	 * @param args ignored
 	 */
 	public static void main(String[] args) {
-		//dump_all();
-		//dump_photo();
-		//dump_friends();
-		dump_review();
-		//dump_review_2();
-		//dump_review_3();
-		//stringReplaceTest();
+		dump_all();
 	}
 }
